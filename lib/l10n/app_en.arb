@@ -1,0 +1,9 @@
+{
+  "@@locale": "en",
+  "appName": "Crypto Tracker",
+  "searchHint": "Search coins",
+  "favorites": "Favorites",
+  "retry": "Retry",
+  "emptyCoins": "No coins found",
+  "offline": "Offline mode. Showing cached data when available."
+}
