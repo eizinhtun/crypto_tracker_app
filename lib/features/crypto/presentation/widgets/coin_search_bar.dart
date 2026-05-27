@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
+
 class CoinSearchBar extends StatefulWidget {
   const CoinSearchBar({
     required this.onChanged,
@@ -40,33 +42,63 @@ class _CoinSearchBarState extends State<CoinSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: TextField(
-        controller: _controller,
-        textInputAction: TextInputAction.search,
-        decoration: InputDecoration(
-          hintText: 'Search coins',
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: ValueListenableBuilder<TextEditingValue>(
-            valueListenable: _controller,
-            builder: (context, value, child) {
-              if (value.text.isEmpty) {
-                return const SizedBox.shrink();
-              }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fillColor = isDark ? AppColors.darkCard : AppColors.lightCard;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final textColor =
+        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+    final mutedColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
 
-              return IconButton(
-                tooltip: 'Clear search',
-                onPressed: () {
-                  _controller.clear();
-                  widget.onChanged('');
-                },
-                icon: const Icon(Icons.close),
-              );
-            },
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 14),
+      child: SizedBox(
+        height: 46,
+        child: TextField(
+          controller: _controller,
+          textInputAction: TextInputAction.search,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: textColor,
+                fontWeight: FontWeight.w700,
+              ),
+          decoration: InputDecoration(
+            hintText: 'Search coins',
+            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: mutedColor,
+                  fontWeight: FontWeight.w700,
+                ),
+            prefixIcon: Icon(Icons.search, color: mutedColor, size: 21),
+            suffixIcon: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _controller,
+              builder: (context, value, child) {
+                if (value.text.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+
+                return IconButton(
+                  tooltip: 'Clear search',
+                  onPressed: () {
+                    _controller.clear();
+                    widget.onChanged('');
+                  },
+                  icon: Icon(Icons.close, color: mutedColor, size: 18),
+                );
+              },
+            ),
+            filled: true,
+            fillColor: fillColor,
+            contentPadding: EdgeInsets.zero,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: borderColor),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: mutedColor),
+            ),
           ),
+          onChanged: widget.onChanged,
         ),
-        onChanged: widget.onChanged,
       ),
     );
   }

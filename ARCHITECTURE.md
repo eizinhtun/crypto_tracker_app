@@ -105,6 +105,15 @@ exceptions, including unauthorized, forbidden, not found, server, network, and
 rate-limit exceptions. `429` responses preserve `Retry-After` metadata when the
 header is available.
 
+Search uses a two-step CoinGecko flow so list rows keep complete market data:
+
+1. `/search` resolves matching coin ids.
+2. `/coins/markets?ids=...` fetches price, market cap, image, and 24h change
+   for those ids.
+
+The remote data source returns market `CoinModel` objects from the second call,
+so the list UI does not render sparse search-only records with missing prices.
+
 ## Offline Strategy
 
 The repository is the offline coordination point. It decides whether to use the
@@ -157,23 +166,24 @@ still rendering cached content.
 
 ### Local Persistence
 
-Hive stores cached API responses in typed `Box<CacheRecord>` boxes and favorite
-state in a typed `Box<bool>`. `Box<dynamic>` is only used transiently during
-startup migration to invalidate legacy raw cache values before reopening typed
-boxes.
+Hive stores cached API responses in concrete typed boxes:
 
-`CacheRecord` contains:
+- `Box<CoinsCacheRecord>` for cached coin pages;
+- `Box<CoinDetailCacheRecord>` for cached coin detail responses;
+- `Box<TrendingCoinsCacheRecord>` for cached trending coins;
+- `Box<GlobalMarketCacheRecord>` for cached global market data;
+- `Box<bool>` for favorite coin ids.
 
-- `payload`: serialized DTO JSON;
+`Box<dynamic>` is only used transiently during startup migration to inspect and
+delete legacy raw values before reopening the same stores with typed Hive boxes.
+
+Each cache record contains:
+
+- `schemaVersion`: cache record format version;
+- typed cache DTO payloads such as `CoinCacheDto`, `CoinDetailCacheDto`,
+  `TrendingCoinCacheDto`, and `GlobalMarketCacheDto`;
 - `cachedAt`: UTC timestamp for when the response was cached;
 - `ttl`: cache lifetime for that record.
-
-Typed cache boxes store:
-
-- cached coin pages;
-- cached coin detail responses;
-- cached trending coins;
-- cached global market data.
 
 Favorites use a separate typed boolean box keyed by coin id.
 
@@ -184,8 +194,11 @@ Cache TTLs are defined in `AppConstants`:
 - global market: 10 minutes;
 - coin detail: 1 hour.
 
-The local data source invalidates expired records automatically when they are
-read. It also exposes `invalidateExpiredCache()` for explicit cache cleanup.
+The local data source invalidates expired records and stale schema-version
+records automatically when they are read. It also exposes
+`invalidateExpiredCache()` for explicit cache cleanup. Startup migration deletes
+legacy raw values and old cache schemas before reopening boxes with typed Hive
+box APIs.
 
 Favorites are local-first. Toggling a favorite does not require network access,
 and list/detail ViewModels merge favorite status into the renderable state.

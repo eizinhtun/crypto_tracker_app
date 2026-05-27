@@ -14,87 +14,151 @@ class GlobalMarketCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = _MarketColors.from(context);
     final change = market.marketCapChangePercentage24hUsd;
     final changeColor = change >= 0 ? AppColors.positive : AppColors.negative;
 
-    return Card(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Global Market',
-              style: Theme.of(context).textTheme.titleMedium,
+    return Container(
+      height: 82,
+      margin: const EdgeInsets.fromLTRB(24, 12, 24, 14),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+      decoration: BoxDecoration(
+        color: colors.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: colors.border),
+        boxShadow: [
+          if (!colors.isDark)
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.035),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
             ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 16,
-              runSpacing: 12,
-              children: [
-                _Metric(
-                  label: 'Market Cap',
-                  value: CurrencyFormatter.usd(market.totalMarketCapUsd),
-                ),
-                _Metric(
-                  label: '24h Volume',
-                  value: CurrencyFormatter.usd(market.totalVolumeUsd),
-                ),
-                _Metric(
-                  label: 'Coins',
-                  value: CurrencyFormatter.compact(
-                    market.activeCryptocurrencies,
-                  ),
-                ),
-                _Metric(
-                  label: '24h Change',
-                  value: CurrencyFormatter.percentage(change),
-                  valueColor: changeColor,
-                ),
-              ],
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 7,
+            child: _MarketMetric(
+              label: 'TOP 20  ·  24H',
+              value: CurrencyFormatter.compactUsd(market.totalMarketCapUsd),
+              trailing: Text(
+                CurrencyFormatter.percentage(change),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: changeColor,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0,
+                    ),
+              ),
             ),
-          ],
-        ),
+          ),
+          Container(
+            width: 1,
+            height: 42,
+            color: colors.border,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+          ),
+          Expanded(
+            flex: 5,
+            child: _MarketMetric(
+              label: 'VOL 24H',
+              value: CurrencyFormatter.compactUsd(market.totalVolumeUsd),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _Metric extends StatelessWidget {
-  const _Metric({
+class _MarketMetric extends StatelessWidget {
+  const _MarketMetric({
     required this.label,
     required this.value,
-    this.valueColor,
+    this.trailing,
   });
 
   final String label;
   final String value;
-  final Color? valueColor;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 140,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: valueColor,
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-        ],
-      ),
+    final colors = _MarketColors.from(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: colors.muted,
+                letterSpacing: 2.0,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+              ),
+        ),
+        const SizedBox(height: 5),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Flexible(
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: colors.primaryText,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0,
+                      height: 1,
+                    ),
+              ),
+            ),
+            if (trailing != null) ...[
+              const SizedBox(width: 8),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 1),
+                child: trailing,
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _MarketColors {
+  const _MarketColors({
+    required this.isDark,
+    required this.card,
+    required this.border,
+    required this.primaryText,
+    required this.muted,
+  });
+
+  final bool isDark;
+  final Color card;
+  final Color border;
+  final Color primaryText;
+  final Color muted;
+
+  static _MarketColors from(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return _MarketColors(
+      isDark: isDark,
+      card: isDark ? AppColors.darkCard : AppColors.lightCard,
+      border: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+      primaryText:
+          isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+      muted: isDark ? AppColors.darkTextMuted : AppColors.lightTextSecondary,
     );
   }
 }

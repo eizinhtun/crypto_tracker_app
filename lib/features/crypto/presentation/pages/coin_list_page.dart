@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/app_constants.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../viewmodels/coin_list/coin_list_view_model.dart';
 import '../viewmodels/coin_list/coin_list_event.dart';
 import '../viewmodels/coin_list/coin_list_state.dart';
@@ -62,10 +62,10 @@ class _CoinListPageState extends State<CoinListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = _MarketsPageColors.from(context);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(AppConstants.appName),
-      ),
+      backgroundColor: colors.background,
       body: BlocBuilder<CoinListViewModel, CoinListState>(
         builder: (context, state) {
           if (state.status == CoinListStatus.loading && state.coins.isEmpty) {
@@ -81,61 +81,217 @@ class _CoinListPageState extends State<CoinListPage> {
 
           return RefreshIndicator(
             onRefresh: _onRefresh,
-            child: CustomScrollView(
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                if (state.isOffline)
-                  const SliverToBoxAdapter(child: OfflineBanner()),
-                SliverToBoxAdapter(
-                  child: CoinSearchBar(
-                    initialValue: state.query,
-                    onChanged: (query) {
-                      _viewModel.add(CoinListSearchChanged(query));
-                    },
-                  ),
-                ),
-                if (state.globalMarket != null)
+            child: SafeArea(
+              bottom: false,
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  if (state.isOffline)
+                    const SliverToBoxAdapter(child: OfflineBanner()),
+                  const SliverToBoxAdapter(child: _MarketsHeader()),
+                  if (state.globalMarket != null)
+                    SliverToBoxAdapter(
+                      child: GlobalMarketCard(market: state.globalMarket!),
+                    ),
                   SliverToBoxAdapter(
-                    child: GlobalMarketCard(market: state.globalMarket!),
+                    child: TrendingCoinSection(coins: state.trendingCoins),
                   ),
-                SliverToBoxAdapter(
-                  child: TrendingCoinSection(coins: state.trendingCoins),
-                ),
-                if (state.coins.isEmpty)
-                  const SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: EmptyView(message: 'No coins found'),
-                  )
-                else
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        if (index >= state.coins.length) {
-                          return const Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Center(child: CircularProgressIndicator()),
-                          );
-                        }
-
-                        final coin = state.coins[index];
-                        return CoinListItem(
-                          coin: coin,
-                          onTap: () => context.go('/coins/${coin.id}'),
-                          onFavoritePressed: () {
-                            _viewModel.add(CoinListFavoriteToggled(coin.id));
-                          },
-                        );
+                  SliverToBoxAdapter(
+                    child: CoinSearchBar(
+                      initialValue: state.query,
+                      onChanged: (query) {
+                        _viewModel.add(CoinListSearchChanged(query));
                       },
-                      childCount: state.coins.length +
-                          (state.status == CoinListStatus.loadingMore ? 1 : 0),
                     ),
                   ),
-              ],
+                  const SliverToBoxAdapter(child: _CoinTableHeader()),
+                  if (state.coins.isEmpty)
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: EmptyView(message: 'No coins found'),
+                    )
+                  else
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          if (index >= state.coins.length) {
+                            return Container(
+                              height: 72,
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  top: BorderSide(color: colors.divider),
+                                ),
+                              ),
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.4,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+
+                          final coin = state.coins[index];
+                          return CoinListItem(
+                            coin: coin,
+                            rank: index + 1,
+                            onTap: () => context.go('/coins/${coin.id}'),
+                            onFavoritePressed: () {
+                              _viewModel.add(CoinListFavoriteToggled(coin.id));
+                            },
+                          );
+                        },
+                        childCount: state.coins.length +
+                            (state.status == CoinListStatus.loadingMore
+                                ? 1
+                                : 0),
+                      ),
+                    ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                ],
+              ),
             ),
           );
         },
       ),
+    );
+  }
+}
+
+class _MarketsHeader extends StatelessWidget {
+  const _MarketsHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = _MarketsPageColors.from(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '•  LIVE / COINGECKO',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: colors.muted,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2.4,
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Markets',
+                  maxLines: 1,
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        color: colors.primaryText,
+                        fontSize: 38,
+                        fontWeight: FontWeight.w800,
+                        height: 1.02,
+                        letterSpacing: 0,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: colors.card,
+              shape: BoxShape.circle,
+              border: Border.all(color: colors.border),
+            ),
+            child: Icon(
+              Icons.more_horiz,
+              color: colors.primaryText,
+              size: 21,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CoinTableHeader extends StatelessWidget {
+  const _CoinTableHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = _MarketsPageColors.from(context);
+    final labelStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: colors.muted,
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 2.1,
+        );
+
+    return Container(
+      height: 38,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: colors.divider),
+        ),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 32,
+            child: Text('#', style: labelStyle),
+          ),
+          Expanded(
+            child: Text('ASSET', style: labelStyle),
+          ),
+          Text('PRICE  ·  24H', style: labelStyle),
+        ],
+      ),
+    );
+  }
+}
+
+class _MarketsPageColors {
+  const _MarketsPageColors({
+    required this.background,
+    required this.card,
+    required this.border,
+    required this.divider,
+    required this.primaryText,
+    required this.muted,
+  });
+
+  final Color background;
+  final Color card;
+  final Color border;
+  final Color divider;
+  final Color primaryText;
+  final Color muted;
+
+  static _MarketsPageColors from(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return _MarketsPageColors(
+      background: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      card: isDark ? AppColors.darkCard : AppColors.lightCard,
+      border: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+      divider: isDark
+          ? AppColors.darkBorder.withValues(alpha: 0.62)
+          : AppColors.lightBorder.withValues(alpha: 0.82),
+      primaryText:
+          isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+      muted: isDark ? AppColors.darkTextMuted : AppColors.lightTextSecondary,
     );
   }
 }

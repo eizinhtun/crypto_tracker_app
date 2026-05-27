@@ -1,11 +1,13 @@
 import 'package:crypto_tracker_app/core/theme/app_colors.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/coin_detail.dart';
 import 'package:flutter/material.dart';
+
 class DetailTopBar extends StatelessWidget {
   const DetailTopBar({
     required this.detail,
     required this.isFavorite,
     required this.onFavoritePressed,
+    super.key,
   });
 
   final CoinDetail detail;
@@ -15,6 +17,9 @@ class DetailTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rank = detail.marketCapRank;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final secondaryText =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
@@ -31,7 +36,7 @@ class DetailTopBar extends StatelessWidget {
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.2,
-                      color: Colors.black54,
+                      color: secondaryText,
                     ),
               ),
             ),
@@ -62,12 +67,10 @@ class _CircleIconButton extends StatelessWidget {
     return Material(
       color: isDark
           ? AppColors.darkCardSoft
-          : Colors.white.withOpacity(0.75),
+          : Colors.white.withValues(alpha: 0.75),
       shape: CircleBorder(
         side: BorderSide(
-          color: isDark
-              ? AppColors.darkBorder
-              : AppColors.lightBorder,
+          color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
         ),
       ),
       child: InkWell(
@@ -79,9 +82,8 @@ class _CircleIconButton extends StatelessWidget {
           child: Icon(
             icon,
             size: 22,
-            color: isDark
-                ? AppColors.darkTextPrimary
-                : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
           ),
         ),
       ),

@@ -113,24 +113,74 @@ class CryptoRemoteDataSourceImpl implements CryptoRemoteDataSource {
 
   @override
   Future<List<CoinModel>> searchCoins(String query) async {
-    final response = await _safeGet(
+    final searchResponse = await _safeGet(
       ApiConstants.search,
       queryParameters: {'query': query},
     );
-    final data = response.data;
+    final searchData = searchResponse.data;
 
-    if (data is! Map || data['coins'] is! List) {
+    if (searchData is! Map || searchData['coins'] is! List) {
       throw const ServerException('Unexpected search response');
     }
 
-    return (data['coins'] as List)
-        .whereType<Map>()
-        .map(
-          (item) => CoinModel.fromSearchJson(
-            Map<String, dynamic>.from(item),
-          ),
-        )
-        .toList();
+    final ids = _searchCoinIds(searchData['coins'] as List);
+    if (ids.isEmpty) {
+      return const [];
+    }
+
+    final marketsResponse = await _safeGet(
+      ApiConstants.coinsMarkets,
+      queryParameters: {
+        'vs_currency': AppConstants.defaultCurrency,
+        'ids': ids.join(','),
+        'order': 'market_cap_desc',
+        'per_page': ids.length,
+        'page': 1,
+        'sparkline': false,
+        'price_change_percentage': '24h',
+      },
+    );
+    final marketsData = marketsResponse.data;
+
+    if (marketsData is! List) {
+      throw const ServerException('Unexpected search market response');
+    }
+
+    final coinsById = {
+      for (final coin in marketsData
+          .whereType<Map>()
+          .map((item) => CoinModel.fromJson(Map<String, dynamic>.from(item))))
+        coin.id: coin,
+    };
+
+    return ids
+        .map((id) => coinsById[id])
+        .whereType<CoinModel>()
+        .toList(growable: false);
+  }
+
+  List<String> _searchCoinIds(List<dynamic> coins) {
+    final seenIds = <String>{};
+    final ids = <String>[];
+
+    for (final item in coins.whereType<Map>()) {
+      final id = item['id'];
+      if (id is! String) {
+        continue;
+      }
+
+      final safeId = id.trim();
+      if (safeId.isEmpty || !seenIds.add(safeId)) {
+        continue;
+      }
+
+      ids.add(safeId);
+      if (ids.length == AppConstants.defaultPageSize) {
+        break;
+      }
+    }
+
+    return ids;
   }
 
   Future<Response<dynamic>> _safeGet(

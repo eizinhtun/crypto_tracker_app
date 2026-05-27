@@ -2,8 +2,8 @@ import 'package:hive/hive.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/storage_keys.dart';
-import '../../../../core/database/cache_record.dart';
 import '../../../../core/error/exceptions.dart';
+import '../cache/crypto_cache_records.dart';
 import '../models/coin_detail_model.dart';
 import '../models/coin_model.dart';
 import '../models/global_market_model.dart';
@@ -54,10 +54,10 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
     this.now,
   });
 
-  final Box<CacheRecord> coinsBox;
-  final Box<CacheRecord> coinDetailsBox;
-  final Box<CacheRecord> trendingBox;
-  final Box<CacheRecord> globalMarketBox;
+  final Box<CoinsCacheRecord> coinsBox;
+  final Box<CoinDetailCacheRecord> coinDetailsBox;
+  final Box<TrendingCoinsCacheRecord> trendingBox;
+  final Box<GlobalMarketCacheRecord> globalMarketBox;
   final Box<bool> favoritesBox;
   final Duration coinsTtl;
   final Duration coinDetailTtl;
@@ -72,8 +72,9 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
   }) {
     return coinsBox.put(
       '${StorageKeys.coinsPagePrefix}$page',
-      _record(
-        payload: coins.map((coin) => coin.toJson()).toList(),
+      CoinsCacheRecord(
+        coins: coins.map(CoinCacheDto.fromModel).toList(growable: false),
+        cachedAt: _now,
         ttl: coinsTtl,
       ),
     );
@@ -90,7 +91,7 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
       return const [];
     }
 
-    return _readMapList(record.payload).map(CoinModel.fromJson).toList();
+    return record.coins.map((coin) => coin.toModel()).toList(growable: false);
   }
 
   @override
@@ -104,7 +105,7 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
         continue;
       }
 
-      coins.addAll(_readMapList(record.payload).map(CoinModel.fromJson));
+      coins.addAll(record.coins.map((coin) => coin.toModel()));
     }
 
     final byId = <String, CoinModel>{
@@ -121,7 +122,11 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
   Future<void> cacheCoinDetail(CoinDetailModel coin) {
     return coinDetailsBox.put(
       '${StorageKeys.coinDetailPrefix}${coin.id}',
-      _record(payload: coin.toJson(), ttl: coinDetailTtl),
+      CoinDetailCacheRecord(
+        detail: CoinDetailCacheDto.fromModel(coin),
+        cachedAt: _now,
+        ttl: coinDetailTtl,
+      ),
     );
   }
 
@@ -131,21 +136,21 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
       coinDetailsBox,
       '${StorageKeys.coinDetailPrefix}$coinId',
     );
-    final map = _readMap(record?.payload);
-
-    if (map == null) {
+    if (record == null) {
       return null;
     }
 
-    return CoinDetailModel.fromJson(map);
+    return record.detail.toModel();
   }
 
   @override
   Future<void> cacheTrendingCoins(List<TrendingCoinModel> coins) {
     return trendingBox.put(
       StorageKeys.trendingCoins,
-      _record(
-        payload: coins.map((coin) => coin.toJson()).toList(),
+      TrendingCoinsCacheRecord(
+        coins:
+            coins.map(TrendingCoinCacheDto.fromModel).toList(growable: false),
+        cachedAt: _now,
         ttl: trendingTtl,
       ),
     );
@@ -159,16 +164,18 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
       return const [];
     }
 
-    return _readMapList(record.payload)
-        .map(TrendingCoinModel.fromJson)
-        .toList();
+    return record.coins.map((coin) => coin.toModel()).toList(growable: false);
   }
 
   @override
   Future<void> cacheGlobalMarket(GlobalMarketModel market) {
     return globalMarketBox.put(
       StorageKeys.globalMarket,
-      _record(payload: market.toJson(), ttl: globalMarketTtl),
+      GlobalMarketCacheRecord(
+        market: GlobalMarketCacheDto.fromModel(market),
+        cachedAt: _now,
+        ttl: globalMarketTtl,
+      ),
     );
   }
 
@@ -178,13 +185,11 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
       globalMarketBox,
       StorageKeys.globalMarket,
     );
-    final map = _readMap(record?.payload);
-
-    if (map == null) {
+    if (record == null) {
       return null;
     }
 
-    return GlobalMarketModel.fromJson(map);
+    return record.market.toModel();
   }
 
   @override
@@ -227,19 +232,8 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
     ]);
   }
 
-  CacheRecord _record({
-    required Object payload,
-    required Duration ttl,
-  }) {
-    return CacheRecord(
-      payload: payload,
-      cachedAt: _now,
-      ttl: ttl,
-    );
-  }
-
-  Future<CacheRecord?> _getFreshRecord(
-    Box<CacheRecord> box,
+  Future<T?> _getFreshRecord<T extends CryptoCacheRecord>(
+    Box<T> box,
     Object key,
   ) async {
     final record = box.get(key);
@@ -247,7 +241,7 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
       return null;
     }
 
-    if (record.isExpired(_now)) {
+    if (!record.isCurrentSchema || record.isExpired(_now)) {
       await box.delete(key);
       return null;
     }
@@ -255,12 +249,14 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
     return record;
   }
 
-  Future<void> _deleteExpiredRecords(Box<CacheRecord> box) async {
+  Future<void> _deleteExpiredRecords<T extends CryptoCacheRecord>(
+    Box<T> box,
+  ) async {
     final expiredKeys = <Object>[];
 
     for (final key in box.keys) {
       final record = box.get(key);
-      if (record == null || record.isExpired(_now)) {
+      if (record == null || !record.isCurrentSchema || record.isExpired(_now)) {
         expiredKeys.add(key);
       }
     }
@@ -272,24 +268,5 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
 
   DateTime get _now {
     return (now?.call() ?? DateTime.now()).toUtc();
-  }
-
-  List<Map<String, dynamic>> _readMapList(dynamic value) {
-    if (value is! List) {
-      return const [];
-    }
-
-    return value
-        .whereType<Map>()
-        .map((item) => Map<String, dynamic>.from(item))
-        .toList();
-  }
-
-  Map<String, dynamic>? _readMap(dynamic value) {
-    if (value is Map) {
-      return Map<String, dynamic>.from(value);
-    }
-
-    return null;
   }
 }

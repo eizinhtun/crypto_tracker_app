@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:equatable/equatable.dart';
 
 class CoinDetail extends Equatable {
   const CoinDetail({

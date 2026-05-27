@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:crypto_tracker_app/core/constants/storage_keys.dart';
-import 'package:crypto_tracker_app/core/database/cache_record.dart';
+import 'package:crypto_tracker_app/features/crypto/data/cache/crypto_cache_records.dart';
 import 'package:crypto_tracker_app/features/crypto/data/datasources/crypto_local_datasource.dart';
 import 'package:crypto_tracker_app/features/crypto/data/models/coin_model.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,9 +13,7 @@ void main() {
   setUpAll(() async {
     tempDir = await Directory.systemTemp.createTemp('crypto_local_test_');
     Hive.init(tempDir.path);
-    if (!Hive.isAdapterRegistered(CacheRecordAdapter.adapterTypeId)) {
-      Hive.registerAdapter(CacheRecordAdapter());
-    }
+    CryptoCacheAdapters.register();
   });
 
   tearDownAll(() async {
@@ -26,10 +24,10 @@ void main() {
   });
 
   group('CryptoLocalDataSourceImpl', () {
-    late Box<CacheRecord> coinsBox;
-    late Box<CacheRecord> coinDetailsBox;
-    late Box<CacheRecord> trendingBox;
-    late Box<CacheRecord> globalMarketBox;
+    late Box<CoinsCacheRecord> coinsBox;
+    late Box<CoinDetailCacheRecord> coinDetailsBox;
+    late Box<TrendingCoinsCacheRecord> trendingBox;
+    late Box<GlobalMarketCacheRecord> globalMarketBox;
     late Box<bool> favoritesBox;
     late CryptoLocalDataSourceImpl dataSource;
     late DateTime now;
@@ -37,10 +35,13 @@ void main() {
     setUp(() async {
       final suffix = DateTime.now().microsecondsSinceEpoch;
       now = DateTime.utc(2026, 1, 1, 12);
-      coinsBox = await Hive.openBox<CacheRecord>('coins_$suffix');
-      coinDetailsBox = await Hive.openBox<CacheRecord>('details_$suffix');
-      trendingBox = await Hive.openBox<CacheRecord>('trending_$suffix');
-      globalMarketBox = await Hive.openBox<CacheRecord>('global_$suffix');
+      coinsBox = await Hive.openBox<CoinsCacheRecord>('coins_$suffix');
+      coinDetailsBox =
+          await Hive.openBox<CoinDetailCacheRecord>('details_$suffix');
+      trendingBox =
+          await Hive.openBox<TrendingCoinsCacheRecord>('trending_$suffix');
+      globalMarketBox =
+          await Hive.openBox<GlobalMarketCacheRecord>('global_$suffix');
       favoritesBox = await Hive.openBox<bool>('favorites_$suffix');
 
       dataSource = CryptoLocalDataSourceImpl(
@@ -79,8 +80,11 @@ void main() {
       expect(cachedCoins, hasLength(1));
       expect(cachedCoins.single.id, 'bitcoin');
       expect(record, isNotNull);
-      expect(record!.cachedAt, now);
-      expect(record.ttl, const Duration(minutes: 5));
+      final cacheRecord = record!;
+      expect(cacheRecord.schemaVersion, CryptoCacheRecord.currentSchemaVersion);
+      expect(cacheRecord.coins.single.id, 'bitcoin');
+      expect(cacheRecord.cachedAt, now);
+      expect(cacheRecord.ttl, const Duration(minutes: 5));
     });
 
     test('searches cached coins by name or symbol', () async {
@@ -122,6 +126,25 @@ void main() {
       );
 
       now = now.add(const Duration(minutes: 6));
+
+      final cachedCoins = await dataSource.getCachedCoins(1);
+
+      expect(cachedCoins, isEmpty);
+      expect(coinsBox.get('${StorageKeys.coinsPagePrefix}1'), isNull);
+    });
+
+    test('invalidates stale schema cache records on read', () async {
+      await coinsBox.put(
+        '${StorageKeys.coinsPagePrefix}1',
+        CoinsCacheRecord(
+          coins: const [
+            CoinCacheDto(id: 'bitcoin', symbol: 'btc', name: 'Bitcoin'),
+          ],
+          cachedAt: now,
+          ttl: const Duration(minutes: 5),
+          schemaVersion: CryptoCacheRecord.currentSchemaVersion - 1,
+        ),
+      );
 
       final cachedCoins = await dataSource.getCachedCoins(1);
 

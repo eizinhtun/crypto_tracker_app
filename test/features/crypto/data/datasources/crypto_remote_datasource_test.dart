@@ -74,6 +74,96 @@ void main() {
       expect(market.totalMarketCapUsd, 3000000000000);
     });
 
+    test('searches ids first and then fetches full market data', () async {
+      final requestedPaths = <String>[];
+      final dataSource = _createDataSource(
+        _MockDioAdapter(
+          responseFor: (options) {
+            requestedPaths.add(options.uri.path);
+
+            if (options.uri.path.endsWith(ApiConstants.search)) {
+              expect(options.uri.queryParameters['query'], 'bit');
+              return ResponseBody.fromString(
+                jsonEncode({
+                  'coins': [
+                    {'id': 'bitcoin', 'symbol': 'btc', 'name': 'Bitcoin'},
+                    {'id': 'wrapped-bitcoin', 'symbol': 'wbtc', 'name': 'WBTC'},
+                  ],
+                }),
+                200,
+                headers: _jsonHeaders,
+              );
+            }
+
+            if (options.uri.path.endsWith(ApiConstants.coinsMarkets)) {
+              expect(
+                options.uri.queryParameters['ids'],
+                'bitcoin,wrapped-bitcoin',
+              );
+              expect(options.uri.queryParameters['vs_currency'], 'usd');
+
+              return ResponseBody.fromString(
+                jsonEncode([
+                  {
+                    'id': 'wrapped-bitcoin',
+                    'symbol': 'wbtc',
+                    'name': 'Wrapped Bitcoin',
+                    'current_price': 99950,
+                    'market_cap': 10000000000,
+                    'price_change_percentage_24h': -0.2,
+                  },
+                  {
+                    'id': 'bitcoin',
+                    'symbol': 'btc',
+                    'name': 'Bitcoin',
+                    'current_price': 100000,
+                    'market_cap': 2000000000000,
+                    'price_change_percentage_24h': 1.2,
+                  },
+                ]),
+                200,
+                headers: _jsonHeaders,
+              );
+            }
+
+            fail('Unexpected request: ${options.uri}');
+          },
+        ),
+      );
+
+      final coins = await dataSource.searchCoins('bit');
+
+      expect(requestedPaths, hasLength(2));
+      expect(coins.map((coin) => coin.id), ['bitcoin', 'wrapped-bitcoin']);
+      expect(coins.first.currentPrice, 100000);
+      expect(coins.first.marketCap, 2000000000000);
+      expect(coins.first.priceChangePercentage24h, 1.2);
+    });
+
+    test('does not fetch market data when search returns no coin ids',
+        () async {
+      final requestedPaths = <String>[];
+      final dataSource = _createDataSource(
+        _MockDioAdapter(
+          responseFor: (options) {
+            requestedPaths.add(options.uri.path);
+            expect(options.uri.path, endsWith(ApiConstants.search));
+
+            return ResponseBody.fromString(
+              jsonEncode({'coins': []}),
+              200,
+              headers: _jsonHeaders,
+            );
+          },
+        ),
+      );
+
+      final coins = await dataSource.searchCoins('no-match');
+
+      expect(coins, isEmpty);
+      expect(requestedPaths, hasLength(1));
+    });
+
     test('maps rate limits with retry-after metadata', () async {
       final dataSource = _createDataSource(
         _MockDioAdapter(

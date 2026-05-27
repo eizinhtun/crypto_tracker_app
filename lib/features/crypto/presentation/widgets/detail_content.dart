@@ -3,10 +3,11 @@ import 'package:crypto_tracker_app/core/utils/currency_formatter.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/coin_detail.dart';
 import 'package:flutter/material.dart';
 
-class _DetailContent extends StatelessWidget {
-  const _DetailContent({
+class DetailContent extends StatelessWidget {
+  const DetailContent({
     required this.detail,
     required this.descriptionText,
+    super.key,
   });
 
   final CoinDetail detail;
@@ -17,6 +18,11 @@ class _DetailContent extends StatelessWidget {
     final change = detail.priceChangePercentage24h ?? 0;
     final isPositive = change >= 0;
     final changeColor = isPositive ? AppColors.positive : AppColors.negative;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryText =
+        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+    final secondaryText =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
@@ -58,13 +64,15 @@ class _DetailContent extends StatelessWidget {
             _StatCard(
               label: 'ALL-TIME HIGH',
               value: CurrencyFormatter.usd(detail.allTimeHigh),
-              subValue: CurrencyFormatter.percentage(detail.allTimeHighChangePercentage),
+              subValue: CurrencyFormatter.percentage(
+                  detail.allTimeHighChangePercentage),
               subValueColor: AppColors.negative,
             ),
             _StatCard(
               label: 'ALL-TIME LOW',
               value: CurrencyFormatter.usd(detail.allTimeLow),
-              subValue: CurrencyFormatter.percentage(detail.allTimeLowChangePercentage),
+              subValue: CurrencyFormatter.percentage(
+                  detail.allTimeLowChangePercentage),
               subValueColor: AppColors.positive,
             ),
             _StatCard(
@@ -92,7 +100,7 @@ class _DetailContent extends StatelessWidget {
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 height: 1.45,
                 fontWeight: FontWeight.w500,
-                color: Colors.black87,
+                color: primaryText,
               ),
         ),
         if ((detail.homepage ?? '').isNotEmpty) ...[
@@ -102,7 +110,7 @@ class _DetailContent extends StatelessWidget {
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   letterSpacing: 1.4,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black38,
+                  color: secondaryText,
                 ),
           ),
         ],
@@ -124,7 +132,6 @@ class _DetailContent extends StatelessWidget {
     return '${value.toStringAsFixed(2)} ${symbol.toUpperCase()}';
   }
 }
-
 
 class _CoinLogo extends StatelessWidget {
   const _CoinLogo({required this.url});
@@ -169,6 +176,11 @@ class _PriceHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isNegative = percentage.trim().startsWith('-');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryText =
+        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+    final secondaryText =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,7 +190,7 @@ class _PriceHeader extends StatelessWidget {
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 letterSpacing: 2,
                 fontWeight: FontWeight.w800,
-                color: Colors.black38,
+                color: secondaryText,
               ),
         ),
         const SizedBox(height: 4),
@@ -187,7 +199,7 @@ class _PriceHeader extends StatelessWidget {
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: -1.5,
-                color: Colors.black87,
+                color: primaryText,
               ),
         ),
         const SizedBox(height: 6),
@@ -196,7 +208,7 @@ class _PriceHeader extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
               decoration: BoxDecoration(
-                color: percentageColor.withOpacity(0.12),
+                color: percentageColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -211,7 +223,7 @@ class _PriceHeader extends StatelessWidget {
             Text(
               '24h',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: Colors.black38,
+                    color: secondaryText,
                     fontWeight: FontWeight.w700,
                   ),
             ),
@@ -229,12 +241,16 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final secondaryText =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+
     return Text(
       title,
       style: Theme.of(context).textTheme.labelMedium?.copyWith(
             letterSpacing: 2.2,
             fontWeight: FontWeight.w800,
-            color: Colors.black38,
+            color: secondaryText,
           ),
     );
   }
@@ -257,24 +273,14 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final cardColor = isDark
-        ? AppColors.darkCard
-        : AppColors.lightCard;
+    final cardColor = isDark ? AppColors.darkCard : AppColors.lightCard;
 
-    final borderColor = isDark
-        ? AppColors.darkBorder
-        : AppColors.lightBorder;
-final primaryText = isDark
-    ? AppColors.darkTextPrimary
-    : AppColors.lightTextPrimary;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final primaryText =
+        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
 
-final secondaryText = isDark
-    ? AppColors.darkTextSecondary
-    : AppColors.lightTextSecondary;
-
-final mutedText = isDark
-    ? AppColors.darkTextMuted
-    : AppColors.lightTextSecondary;
+    final secondaryText =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 13, 12, 12),

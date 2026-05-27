@@ -1,6 +1,6 @@
 import 'package:hive_flutter/hive_flutter.dart';
 
-import 'cache_record.dart';
+import '../../features/crypto/data/cache/crypto_cache_records.dart';
 import 'hive_boxes.dart';
 
 abstract final class HiveInitializer {
@@ -9,28 +9,29 @@ abstract final class HiveInitializer {
     _registerAdapters();
 
     await Future.wait([
-      _openCacheBox(HiveBoxes.coins),
-      _openCacheBox(HiveBoxes.coinDetails),
-      _openCacheBox(HiveBoxes.trending),
-      _openCacheBox(HiveBoxes.globalMarket),
+      _openCacheBox<CoinsCacheRecord>(HiveBoxes.coins),
+      _openCacheBox<CoinDetailCacheRecord>(HiveBoxes.coinDetails),
+      _openCacheBox<TrendingCoinsCacheRecord>(HiveBoxes.trending),
+      _openCacheBox<GlobalMarketCacheRecord>(HiveBoxes.globalMarket),
       _openBoolBox(HiveBoxes.favorites),
     ]);
   }
 
   static void _registerAdapters() {
-    if (!Hive.isAdapterRegistered(CacheRecordAdapter.adapterTypeId)) {
-      Hive.registerAdapter(CacheRecordAdapter());
-    }
+    CryptoCacheAdapters.register();
   }
 
-  static Future<Box<CacheRecord>> _openCacheBox(String name) async {
+  static Future<Box<T>> _openCacheBox<T extends CryptoCacheRecord>(
+    String name,
+  ) async {
     if (Hive.isBoxOpen(name)) {
-      return Hive.box<CacheRecord>(name);
+      return Hive.box<T>(name);
     }
 
     final migrationBox = await Hive.openBox<dynamic>(name);
     final legacyKeys = migrationBox.keys.where((key) {
-      return migrationBox.get(key) is! CacheRecord;
+      final value = migrationBox.get(key);
+      return value is! T || !value.isCurrentSchema;
     }).toList();
 
     if (legacyKeys.isNotEmpty) {
@@ -38,7 +39,7 @@ abstract final class HiveInitializer {
     }
 
     await migrationBox.close();
-    return Hive.openBox<CacheRecord>(name);
+    return Hive.openBox<T>(name);
   }
 
   static Future<Box<bool>> _openBoolBox(String name) async {

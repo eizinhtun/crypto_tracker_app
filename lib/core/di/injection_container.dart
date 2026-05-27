@@ -18,7 +18,7 @@ import '../../features/crypto/domain/usecases/toggle_favorite_usecase.dart';
 import '../../features/crypto/presentation/viewmodels/coin_detail/coin_detail_view_model.dart';
 import '../../features/crypto/presentation/viewmodels/coin_list/coin_list_view_model.dart';
 import '../../features/crypto/presentation/viewmodels/favorite/favorite_view_model.dart';
-import '../database/cache_record.dart';
+import '../../features/crypto/data/cache/crypto_cache_records.dart';
 import '../database/hive_boxes.dart';
 import '../network/dio_client.dart';
 import '../network/network_info.dart';
@@ -37,20 +37,20 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<NetworkInfo>(
       () => ConnectivityNetworkInfo(sl()),
     )
-    ..registerLazySingleton<Box<CacheRecord>>(
-      () => Hive.box<CacheRecord>(HiveBoxes.coins),
+    ..registerLazySingleton<Box<CoinsCacheRecord>>(
+      () => Hive.box<CoinsCacheRecord>(HiveBoxes.coins),
       instanceName: HiveBoxes.coins,
     )
-    ..registerLazySingleton<Box<CacheRecord>>(
-      () => Hive.box<CacheRecord>(HiveBoxes.coinDetails),
+    ..registerLazySingleton<Box<CoinDetailCacheRecord>>(
+      () => Hive.box<CoinDetailCacheRecord>(HiveBoxes.coinDetails),
       instanceName: HiveBoxes.coinDetails,
     )
-    ..registerLazySingleton<Box<CacheRecord>>(
-      () => Hive.box<CacheRecord>(HiveBoxes.trending),
+    ..registerLazySingleton<Box<TrendingCoinsCacheRecord>>(
+      () => Hive.box<TrendingCoinsCacheRecord>(HiveBoxes.trending),
       instanceName: HiveBoxes.trending,
     )
-    ..registerLazySingleton<Box<CacheRecord>>(
-      () => Hive.box<CacheRecord>(HiveBoxes.globalMarket),
+    ..registerLazySingleton<Box<GlobalMarketCacheRecord>>(
+      () => Hive.box<GlobalMarketCacheRecord>(HiveBoxes.globalMarket),
       instanceName: HiveBoxes.globalMarket,
     )
     ..registerLazySingleton<Box<bool>>(

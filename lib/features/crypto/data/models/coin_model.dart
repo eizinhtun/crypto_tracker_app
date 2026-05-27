@@ -34,15 +34,6 @@ class CoinModel {
     );
   }
 
-  factory CoinModel.fromSearchJson(Map<String, dynamic> json) {
-    return CoinModel(
-      id: json['id'] as String? ?? '',
-      symbol: json['symbol'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      image: json['large'] as String? ?? json['thumb'] as String?,
-    );
-  }
-
   factory CoinModel.fromEntity(Coin coin) {
     return CoinModel(
       id: coin.id,
