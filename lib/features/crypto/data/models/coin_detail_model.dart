@@ -12,6 +12,13 @@ class CoinDetailModel {
     this.marketCap,
     this.marketCapRank,
     this.priceChangePercentage24h,
+    this.totalVolume,
+    this.allTimeHigh,
+    this.allTimeHighChangePercentage,
+    this.allTimeLow,
+    this.allTimeLowChangePercentage,
+    this.circulatingSupply,
+    this.maxSupply,
   });
 
   final String id;
@@ -25,13 +32,27 @@ class CoinDetailModel {
   final int? marketCapRank;
   final double? priceChangePercentage24h;
 
+  final double? totalVolume;
+  final double? allTimeHigh;
+  final double? allTimeHighChangePercentage;
+  final double? allTimeLow;
+  final double? allTimeLowChangePercentage;
+  final double? circulatingSupply;
+  final double? maxSupply;
+
   factory CoinDetailModel.fromJson(Map<String, dynamic> json) {
     final description = _asMap(json['description']);
     final image = _asMap(json['image']);
     final links = _asMap(json['links']);
     final marketData = _asMap(json['market_data']);
+
     final currentPrice = _asMap(marketData['current_price']);
     final marketCap = _asMap(marketData['market_cap']);
+    final totalVolume = _asMap(marketData['total_volume']);
+    final ath = _asMap(marketData['ath']);
+    final athChangePercentage = _asMap(marketData['ath_change_percentage']);
+    final atl = _asMap(marketData['atl']);
+    final atlChangePercentage = _asMap(marketData['atl_change_percentage']);
 
     return CoinDetailModel(
       id: json['id'] as String? ?? '',
@@ -45,6 +66,13 @@ class CoinDetailModel {
       marketCapRank: _toInt(json['market_cap_rank']),
       priceChangePercentage24h:
           _toDouble(marketData['price_change_percentage_24h']),
+      totalVolume: _toDouble(totalVolume['usd']),
+      allTimeHigh: _toDouble(ath['usd']),
+      allTimeHighChangePercentage: _toDouble(athChangePercentage['usd']),
+      allTimeLow: _toDouble(atl['usd']),
+      allTimeLowChangePercentage: _toDouble(atlChangePercentage['usd']),
+      circulatingSupply: _toDouble(marketData['circulating_supply']),
+      maxSupply: _toDouble(marketData['max_supply']),
     );
   }
 
@@ -60,6 +88,13 @@ class CoinDetailModel {
       marketCap: marketCap,
       marketCapRank: marketCapRank,
       priceChangePercentage24h: priceChangePercentage24h,
+      totalVolume: totalVolume,
+      allTimeHigh: allTimeHigh,
+      allTimeHighChangePercentage: allTimeHighChangePercentage,
+      allTimeLow: allTimeLow,
+      allTimeLowChangePercentage: allTimeLowChangePercentage,
+      circulatingSupply: circulatingSupply,
+      maxSupply: maxSupply,
     );
   }
 
@@ -77,6 +112,17 @@ class CoinDetailModel {
         'current_price': {'usd': currentPrice},
         'market_cap': {'usd': marketCap},
         'price_change_percentage_24h': priceChangePercentage24h,
+        'total_volume': {'usd': totalVolume},
+        'ath': {'usd': allTimeHigh},
+        'ath_change_percentage': {
+          'usd': allTimeHighChangePercentage,
+        },
+        'atl': {'usd': allTimeLow},
+        'atl_change_percentage': {
+          'usd': allTimeLowChangePercentage,
+        },
+        'circulating_supply': circulatingSupply,
+        'max_supply': maxSupply,
       },
       'market_cap_rank': marketCapRank,
     };
@@ -107,6 +153,7 @@ double? _toDouble(dynamic value) {
   if (value == null) {
     return null;
   }
+
   if (value is num) {
     return value.toDouble();
   }
@@ -118,9 +165,11 @@ int? _toInt(dynamic value) {
   if (value == null) {
     return null;
   }
+
   if (value is int) {
     return value;
   }
+
   if (value is num) {
     return value.toInt();
   }

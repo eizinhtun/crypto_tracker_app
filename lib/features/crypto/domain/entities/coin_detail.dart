@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:equatable/equatable.dart';
 
 class CoinDetail extends Equatable {
   const CoinDetail({
@@ -12,6 +13,13 @@ class CoinDetail extends Equatable {
     this.marketCap,
     this.marketCapRank,
     this.priceChangePercentage24h,
+    this.totalVolume,
+    this.allTimeHigh,
+    this.allTimeHighChangePercentage,
+    this.allTimeLow,
+    this.allTimeLowChangePercentage,
+    this.circulatingSupply,
+    this.maxSupply,
   });
 
   final String id;
@@ -25,6 +33,14 @@ class CoinDetail extends Equatable {
   final int? marketCapRank;
   final double? priceChangePercentage24h;
 
+  final double? totalVolume;
+  final double? allTimeHigh;
+  final double? allTimeHighChangePercentage;
+  final double? allTimeLow;
+  final double? allTimeLowChangePercentage;
+  final double? circulatingSupply;
+  final double? maxSupply;
+
   @override
   List<Object?> get props => [
         id,
@@ -37,5 +53,12 @@ class CoinDetail extends Equatable {
         marketCap,
         marketCapRank,
         priceChangePercentage24h,
+        totalVolume,
+        allTimeHigh,
+        allTimeHighChangePercentage,
+        allTimeLow,
+        allTimeLowChangePercentage,
+        circulatingSupply,
+        maxSupply,
       ];
 }

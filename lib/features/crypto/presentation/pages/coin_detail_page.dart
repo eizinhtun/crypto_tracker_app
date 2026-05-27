@@ -1,14 +1,14 @@
+import 'package:crypto_tracker_app/features/crypto/presentation/widgets/detail_topbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../domain/entities/coin_detail.dart';
-import '../viewmodels/coin_detail/coin_detail_view_model.dart';
 import '../viewmodels/coin_detail/coin_detail_event.dart';
 import '../viewmodels/coin_detail/coin_detail_state.dart';
+import '../viewmodels/coin_detail/coin_detail_view_model.dart';
 import '../widgets/error_view.dart';
-import '../widgets/favorite_button.dart';
 import '../widgets/loading_view.dart';
 import '../widgets/offline_banner.dart';
 
@@ -38,45 +38,58 @@ class _CoinDetailView extends StatelessWidget {
         final detail = state.detail;
 
         return Scaffold(
-          appBar: AppBar(
-            title: Text(detail?.name ?? 'Coin Detail'),
-            actions: [
-              if (detail != null)
-                FavoriteButton(
-                  isFavorite: state.isFavorite,
-                  onPressed: () {
+          // appBar: AppBar(
+          //   title: Text(detail?.name ?? 'Coin Detail'),
+          //   actions: [
+          //     if (detail != null)
+          //       FavoriteButton(
+          //         isFavorite: state.isFavorite,
+          //         onPressed: () {
+          //           context
+          //               .read<CoinDetailViewModel>()
+          //               .add(const CoinDetailFavoriteToggled());
+          //         },
+          //       ),
+          //   ],
+          // ),
+
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          body: SafeArea(
+            child: switch (state.status) {
+              CoinDetailStatus.loading => const LoadingView(),
+              CoinDetailStatus.failure => ErrorView(
+                  message: state.errorMessage ?? 'Unable to load coin detail',
+                  onRetry: () {
                     context
                         .read<CoinDetailViewModel>()
-                        .add(const CoinDetailFavoriteToggled());
+                        .add(CoinDetailRequested(coinId));
                   },
                 ),
-            ],
-          ),
-          body: switch (state.status) {
-            CoinDetailStatus.loading => const LoadingView(),
-            CoinDetailStatus.failure => ErrorView(
-                message: state.errorMessage ?? 'Unable to load coin detail',
-                onRetry: () {
-                  context
-                      .read<CoinDetailViewModel>()
-                      .add(CoinDetailRequested(coinId));
-                },
-              ),
-            CoinDetailStatus.initial => const LoadingView(),
-            CoinDetailStatus.success => detail == null
-                ? const ErrorView(message: 'Coin detail is unavailable')
-                : Column(
-                    children: [
-                      if (state.isOffline) const OfflineBanner(),
-                      Expanded(
-                        child: _DetailContent(
+              CoinDetailStatus.initial => const LoadingView(),
+              CoinDetailStatus.success => detail == null
+                  ? const ErrorView(message: 'Coin detail is unavailable')
+                  : Column(
+                      children: [
+                        DetailTopBar(
                           detail: detail,
-                          descriptionText: state.descriptionText,
+                          isFavorite: state.isFavorite,
+                          onFavoritePressed: () {
+                            context
+                                .read<CoinDetailViewModel>()
+                                .add(const CoinDetailFavoriteToggled());
+                          },
                         ),
-                      ),
-                    ],
-                  ),
-          },
+                        if (state.isOffline) const OfflineBanner(),
+                        Expanded(
+                          child: _DetailContent(
+                            detail: detail,
+                            descriptionText: state.descriptionText,
+                          ),
+                        ),
+                      ],
+                    ),
+            },
+          ),
         );
       },
     );

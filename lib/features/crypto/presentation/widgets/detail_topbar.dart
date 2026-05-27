@@ -1,0 +1,90 @@
+import 'package:crypto_tracker_app/core/theme/app_colors.dart';
+import 'package:crypto_tracker_app/features/crypto/domain/entities/coin_detail.dart';
+import 'package:flutter/material.dart';
+class DetailTopBar extends StatelessWidget {
+  const DetailTopBar({
+    required this.detail,
+    required this.isFavorite,
+    required this.onFavoritePressed,
+  });
+
+  final CoinDetail detail;
+  final bool isFavorite;
+  final VoidCallback onFavoritePressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final rank = detail.marketCapRank;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+      child: Row(
+        children: [
+          _CircleIconButton(
+            icon: Icons.chevron_left,
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          Expanded(
+            child: Center(
+              child: Text(
+                '${detail.symbol.toUpperCase()}  ·  ${rank == null ? 'RANK -' : 'RANK #$rank'}',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                      color: Colors.black54,
+                    ),
+              ),
+            ),
+          ),
+          _CircleIconButton(
+            icon: isFavorite ? Icons.star : Icons.star_border,
+            onPressed: onFavoritePressed,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CircleIconButton extends StatelessWidget {
+  const _CircleIconButton({
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: isDark
+          ? AppColors.darkCardSoft
+          : Colors.white.withOpacity(0.75),
+      shape: CircleBorder(
+        side: BorderSide(
+          color: isDark
+              ? AppColors.darkBorder
+              : AppColors.lightBorder,
+        ),
+      ),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onPressed,
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(
+            icon,
+            size: 22,
+            color: isDark
+                ? AppColors.darkTextPrimary
+                : AppColors.lightTextPrimary,
+          ),
+        ),
+      ),
+    );
+  }
+}

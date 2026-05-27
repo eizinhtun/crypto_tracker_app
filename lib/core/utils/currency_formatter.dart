@@ -28,4 +28,25 @@ abstract final class CurrencyFormatter {
 
     return '${value.toStringAsFixed(2)}%';
   }
+  static String compactUsd(num? value) {
+  if (value == null) return '-';
+
+  if (value >= 1000000000000) {
+    return '\$${(value / 1000000000000).toStringAsFixed(2)}T';
+  }
+
+  if (value >= 1000000000) {
+    return '\$${(value / 1000000000).toStringAsFixed(2)}B';
+  }
+
+  if (value >= 1000000) {
+    return '\$${(value / 1000000).toStringAsFixed(2)}M';
+  }
+
+  if (value >= 1000) {
+    return '\$${(value / 1000).toStringAsFixed(2)}K';
+  }
+
+  return '\$${value.toStringAsFixed(2)}';
+}
 }
