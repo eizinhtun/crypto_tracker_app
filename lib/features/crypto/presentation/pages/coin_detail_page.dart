@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/di/injection_container.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../domain/entities/coin_detail.dart';
-import '../bloc/coin_detail/coin_detail_bloc.dart';
-import '../bloc/coin_detail/coin_detail_event.dart';
-import '../bloc/coin_detail/coin_detail_state.dart';
+import '../viewmodels/coin_detail/coin_detail_view_model.dart';
+import '../viewmodels/coin_detail/coin_detail_event.dart';
+import '../viewmodels/coin_detail/coin_detail_state.dart';
 import '../widgets/error_view.dart';
 import '../widgets/favorite_button.dart';
 import '../widgets/loading_view.dart';
+import '../widgets/offline_banner.dart';
 
 class CoinDetailPage extends StatelessWidget {
   const CoinDetailPage({
@@ -22,19 +22,18 @@ class CoinDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<CoinDetailBloc>()..add(CoinDetailRequested(coinId)),
-      child: const _CoinDetailView(),
-    );
+    return _CoinDetailView(coinId: coinId);
   }
 }
 
 class _CoinDetailView extends StatelessWidget {
-  const _CoinDetailView();
+  const _CoinDetailView({required this.coinId});
+
+  final String coinId;
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<CoinDetailBloc, CoinDetailState>(
+    return BlocBuilder<CoinDetailViewModel, CoinDetailState>(
       builder: (context, state) {
         final detail = state.detail;
 
@@ -47,7 +46,7 @@ class _CoinDetailView extends StatelessWidget {
                   isFavorite: state.isFavorite,
                   onPressed: () {
                     context
-                        .read<CoinDetailBloc>()
+                        .read<CoinDetailViewModel>()
                         .add(const CoinDetailFavoriteToggled());
                   },
                 ),
@@ -57,18 +56,26 @@ class _CoinDetailView extends StatelessWidget {
             CoinDetailStatus.loading => const LoadingView(),
             CoinDetailStatus.failure => ErrorView(
                 message: state.errorMessage ?? 'Unable to load coin detail',
-                onRetry: detail == null
-                    ? null
-                    : () {
-                        context
-                            .read<CoinDetailBloc>()
-                            .add(CoinDetailRequested(detail.id));
-                      },
+                onRetry: () {
+                  context
+                      .read<CoinDetailViewModel>()
+                      .add(CoinDetailRequested(coinId));
+                },
               ),
             CoinDetailStatus.initial => const LoadingView(),
             CoinDetailStatus.success => detail == null
                 ? const ErrorView(message: 'Coin detail is unavailable')
-                : _DetailContent(detail: detail),
+                : Column(
+                    children: [
+                      if (state.isOffline) const OfflineBanner(),
+                      Expanded(
+                        child: _DetailContent(
+                          detail: detail,
+                          descriptionText: state.descriptionText,
+                        ),
+                      ),
+                    ],
+                  ),
           },
         );
       },
@@ -77,9 +84,13 @@ class _CoinDetailView extends StatelessWidget {
 }
 
 class _DetailContent extends StatelessWidget {
-  const _DetailContent({required this.detail});
+  const _DetailContent({
+    required this.detail,
+    required this.descriptionText,
+  });
 
   final CoinDetail detail;
+  final String descriptionText;
 
   @override
   Widget build(BuildContext context) {
@@ -139,19 +150,15 @@ class _DetailContent extends StatelessWidget {
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
-        if ((detail.description ?? '').isNotEmpty) ...[
+        if (descriptionText.isNotEmpty) ...[
           const SizedBox(height: 24),
           Text(
-            _stripHtml(detail.description!),
+            descriptionText,
             style: Theme.of(context).textTheme.bodyLarge,
           ),
         ],
       ],
     );
-  }
-
-  String _stripHtml(String value) {
-    return value.replaceAll(RegExp('<[^>]*>'), '').trim();
   }
 }
 

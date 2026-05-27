@@ -2,35 +2,43 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/constants/app_constants.dart';
 import '../../../../../core/error/result.dart';
+import '../../../../../core/utils/debounce.dart';
 import '../../../domain/entities/coin.dart';
 import '../../../domain/usecases/get_coins_usecase.dart';
-import '../../../domain/usecases/get_global_market_usecase.dart';
-import '../../../domain/usecases/get_trending_coins_usecase.dart';
+import '../../../domain/usecases/get_crypto_overview_usecase.dart';
 import '../../../domain/usecases/search_coins_usecase.dart';
 import '../../../domain/usecases/toggle_favorite_usecase.dart';
 import 'coin_list_event.dart';
 import 'coin_list_state.dart';
 
-class CoinListBloc extends Bloc<CoinListEvent, CoinListState> {
-  CoinListBloc({
+class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
+  CoinListViewModel({
     required this.getCoinsUseCase,
-    required this.getTrendingCoinsUseCase,
-    required this.getGlobalMarketUseCase,
+    required this.getCryptoOverviewUseCase,
     required this.searchCoinsUseCase,
     required this.toggleFavoriteUseCase,
   }) : super(CoinListState.initial()) {
     on<CoinListStarted>(_onStarted);
     on<CoinListRefreshRequested>(_onRefreshRequested);
+    on<CoinListScrollChanged>(_onScrollChanged);
     on<CoinListNextPageRequested>(_onNextPageRequested);
     on<CoinListSearchChanged>(_onSearchChanged);
+    on<CoinListSearchDebounced>(_onSearchDebounced);
     on<CoinListFavoriteToggled>(_onFavoriteToggled);
   }
 
   final GetCoinsUseCase getCoinsUseCase;
-  final GetTrendingCoinsUseCase getTrendingCoinsUseCase;
-  final GetGlobalMarketUseCase getGlobalMarketUseCase;
+  final GetCryptoOverviewUseCase getCryptoOverviewUseCase;
   final SearchCoinsUseCase searchCoinsUseCase;
   final ToggleFavoriteUseCase toggleFavoriteUseCase;
+
+  final Debounce _searchDebounce = Debounce(AppConstants.debounceDuration);
+
+  @override
+  Future<void> close() {
+    _searchDebounce.dispose();
+    return super.close();
+  }
 
   Future<void> _onStarted(
     CoinListStarted event,
@@ -46,6 +54,15 @@ class CoinListBloc extends Bloc<CoinListEvent, CoinListState> {
     return _loadFirstPage(emit, isRefresh: true);
   }
 
+  void _onScrollChanged(
+    CoinListScrollChanged event,
+    Emitter<CoinListState> emit,
+  ) {
+    if (event.remainingExtent <= AppConstants.paginationScrollThreshold) {
+      add(const CoinListNextPageRequested());
+    }
+  }
+
   Future<void> _loadFirstPage(
     Emitter<CoinListState> emit, {
     bool isRefresh = false,
@@ -58,36 +75,27 @@ class CoinListBloc extends Bloc<CoinListEvent, CoinListState> {
       ),
     );
 
-    final globalMarketResult = await getGlobalMarketUseCase();
-    final trendingCoinsResult = await getTrendingCoinsUseCase();
-    final coinsResult = await getCoinsUseCase();
+    final overviewResult = await getCryptoOverviewUseCase();
 
-    final globalMarket = _valueOrNull(globalMarketResult);
-    final trendingCoins = _listOrExisting(
-      trendingCoinsResult,
-      state.trendingCoins,
-    );
-
-    switch (coinsResult) {
-      case Success<List<Coin>>(value: final coins):
+    switch (overviewResult) {
+      case Success(value: final overviewResult):
+        final overview = overviewResult.data;
         emit(
           state.copyWith(
             status: CoinListStatus.success,
-            coins: coins,
-            trendingCoins: trendingCoins,
-            globalMarket: globalMarket,
-            page: AppConstants.firstPage,
-            hasReachedMax: coins.length < AppConstants.defaultPageSize,
-            isOffline: false,
+            coins: overview.coins,
+            trendingCoins: overview.trendingCoins,
+            globalMarket: overview.globalMarket,
+            page: overview.page,
+            hasReachedMax: overview.hasReachedMax,
+            isOffline: overviewResult.isFromCache,
             clearError: true,
           ),
         );
-      case Error<List<Coin>>(failure: final failure):
+      case Error(failure: final failure):
         emit(
           state.copyWith(
             status: CoinListStatus.failure,
-            trendingCoins: trendingCoins,
-            globalMarket: globalMarket,
             isOffline: true,
             errorMessage: failure.message,
           ),
@@ -111,17 +119,19 @@ class CoinListBloc extends Bloc<CoinListEvent, CoinListState> {
     final result = await getCoinsUseCase(page: nextPage);
 
     switch (result) {
-      case Success<List<Coin>>(value: final coins):
+      case Success<DataResult<List<Coin>>>(value: final coinsResult):
+        final coins = coinsResult.data;
         emit(
           state.copyWith(
             status: CoinListStatus.success,
             coins: [...state.coins, ...coins],
             page: nextPage,
             hasReachedMax: coins.length < AppConstants.defaultPageSize,
+            isOffline: coinsResult.isFromCache,
             clearError: true,
           ),
         );
-      case Error<List<Coin>>(failure: final failure):
+      case Error<DataResult<List<Coin>>>(failure: final failure):
         emit(
           state.copyWith(
             status: CoinListStatus.failure,
@@ -131,8 +141,22 @@ class CoinListBloc extends Bloc<CoinListEvent, CoinListState> {
     }
   }
 
-  Future<void> _onSearchChanged(
+  void _onSearchChanged(
     CoinListSearchChanged event,
+    Emitter<CoinListState> emit,
+  ) {
+    final query = event.query.trim();
+    if (query.isEmpty) {
+      _searchDebounce.dispose();
+      add(const CoinListSearchDebounced(''));
+      return;
+    }
+
+    _searchDebounce(() => add(CoinListSearchDebounced(query)));
+  }
+
+  Future<void> _onSearchDebounced(
+    CoinListSearchDebounced event,
     Emitter<CoinListState> emit,
   ) async {
     final query = event.query.trim();
@@ -154,16 +178,18 @@ class CoinListBloc extends Bloc<CoinListEvent, CoinListState> {
     final result = await searchCoinsUseCase(query);
 
     switch (result) {
-      case Success<List<Coin>>(value: final coins):
+      case Success<DataResult<List<Coin>>>(value: final coinsResult):
+        final coins = coinsResult.data;
         emit(
           state.copyWith(
             status: CoinListStatus.success,
             coins: coins,
             hasReachedMax: true,
+            isOffline: coinsResult.isFromCache,
             clearError: true,
           ),
         );
-      case Error<List<Coin>>(failure: final failure):
+      case Error<DataResult<List<Coin>>>(failure: final failure):
         emit(
           state.copyWith(
             status: CoinListStatus.failure,
@@ -196,19 +222,5 @@ class CoinListBloc extends Bloc<CoinListEvent, CoinListState> {
       case Error<bool>(failure: final failure):
         emit(state.copyWith(errorMessage: failure.message));
     }
-  }
-
-  T? _valueOrNull<T>(Result<T> result) {
-    return switch (result) {
-      Success<T>(value: final value) => value,
-      Error<T>() => null,
-    };
-  }
-
-  List<T> _listOrExisting<T>(Result<List<T>> result, List<T> existing) {
-    return switch (result) {
-      Success<List<T>>(value: final value) => value,
-      Error<List<T>>() => existing,
-    };
   }
 }

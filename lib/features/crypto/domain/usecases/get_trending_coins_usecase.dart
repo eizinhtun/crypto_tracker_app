@@ -7,7 +7,7 @@ class GetTrendingCoinsUseCase {
 
   final CryptoRepository repository;
 
-  Future<Result<List<TrendingCoin>>> call() {
+  Future<Result<DataResult<List<TrendingCoin>>>> call() {
     return repository.getTrendingCoins();
   }
 }

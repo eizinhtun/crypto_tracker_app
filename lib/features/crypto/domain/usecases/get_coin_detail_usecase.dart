@@ -1,3 +1,4 @@
+import '../../../../core/error/failures.dart';
 import '../../../../core/error/result.dart';
 import '../entities/coin_detail.dart';
 import '../repositories/crypto_repository.dart';
@@ -7,7 +8,14 @@ class GetCoinDetailUseCase {
 
   final CryptoRepository repository;
 
-  Future<Result<CoinDetail>> call(String coinId) {
-    return repository.getCoinDetail(coinId);
+  Future<Result<DataResult<CoinDetail>>> call(String coinId) {
+    final safeCoinId = coinId.trim();
+    if (safeCoinId.isEmpty) {
+      return Future.value(
+        const Result.failure(ValidationFailure('Coin id is required')),
+      );
+    }
+
+    return repository.getCoinDetail(safeCoinId);
   }
 }

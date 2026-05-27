@@ -7,11 +7,14 @@ class SearchCoinsUseCase {
 
   final CryptoRepository repository;
 
-  Future<Result<List<Coin>>> call(String query) {
-    if (query.trim().isEmpty) {
-      return Future.value(const Result.success([]));
+  Future<Result<DataResult<List<Coin>>>> call(String query) {
+    final safeQuery = query.trim();
+    if (safeQuery.isEmpty) {
+      return Future.value(
+        const Result.success(DataResult.local([])),
+      );
     }
 
-    return repository.searchCoins(query);
+    return repository.searchCoins(safeQuery);
   }
 }

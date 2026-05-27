@@ -1,16 +1,25 @@
 import '../../domain/entities/coin.dart';
 
-class CoinModel extends Coin {
+class CoinModel {
   const CoinModel({
-    required super.id,
-    required super.symbol,
-    required super.name,
-    super.image,
-    super.currentPrice,
-    super.marketCap,
-    super.priceChangePercentage24h,
-    super.isFavorite,
+    required this.id,
+    required this.symbol,
+    required this.name,
+    this.image,
+    this.currentPrice,
+    this.marketCap,
+    this.priceChangePercentage24h,
+    this.isFavorite = false,
   });
+
+  final String id;
+  final String symbol;
+  final String name;
+  final String? image;
+  final double? currentPrice;
+  final double? marketCap;
+  final double? priceChangePercentage24h;
+  final bool isFavorite;
 
   factory CoinModel.fromJson(Map<String, dynamic> json) {
     return CoinModel(
@@ -44,6 +53,19 @@ class CoinModel extends Coin {
       marketCap: coin.marketCap,
       priceChangePercentage24h: coin.priceChangePercentage24h,
       isFavorite: coin.isFavorite,
+    );
+  }
+
+  Coin toEntity({bool? isFavorite}) {
+    return Coin(
+      id: id,
+      symbol: symbol,
+      name: name,
+      image: image,
+      currentPrice: currentPrice,
+      marketCap: marketCap,
+      priceChangePercentage24h: priceChangePercentage24h,
+      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 

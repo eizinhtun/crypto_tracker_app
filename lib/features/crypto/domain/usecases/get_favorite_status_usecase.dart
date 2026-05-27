@@ -1,3 +1,4 @@
+import '../../../../core/error/failures.dart';
 import '../../../../core/error/result.dart';
 import '../repositories/crypto_repository.dart';
 
@@ -7,6 +8,13 @@ class GetFavoriteStatusUseCase {
   final CryptoRepository repository;
 
   Future<Result<bool>> call(String coinId) {
-    return repository.isFavorite(coinId);
+    final safeCoinId = coinId.trim();
+    if (safeCoinId.isEmpty) {
+      return Future.value(
+        const Result.failure(ValidationFailure('Coin id is required')),
+      );
+    }
+
+    return repository.isFavorite(safeCoinId);
   }
 }

@@ -8,10 +8,14 @@ class GetCoinsUseCase {
 
   final CryptoRepository repository;
 
-  Future<Result<List<Coin>>> call({
+  Future<Result<DataResult<List<Coin>>>> call({
     int page = AppConstants.firstPage,
     int perPage = AppConstants.defaultPageSize,
   }) {
-    return repository.getCoins(page: page, perPage: perPage);
+    final safePage =
+        page < AppConstants.firstPage ? AppConstants.firstPage : page;
+    final safePerPage = perPage.clamp(1, AppConstants.maxPageSize).toInt();
+
+    return repository.getCoins(page: safePage, perPage: safePerPage);
   }
 }

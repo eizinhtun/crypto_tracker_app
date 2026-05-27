@@ -1,8 +1,9 @@
 import 'package:hive/hive.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/storage_keys.dart';
+import '../../../../core/database/cache_record.dart';
 import '../../../../core/error/exceptions.dart';
-import '../../../../core/utils/date_formatter.dart';
 import '../models/coin_detail_model.dart';
 import '../models/coin_model.dart';
 import '../models/global_market_model.dart';
@@ -35,6 +36,8 @@ abstract class CryptoLocalDataSource {
   Future<bool> isFavorite(String coinId);
 
   Future<Set<String>> getFavoriteIds();
+
+  Future<void> invalidateExpiredCache();
 }
 
 class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
@@ -44,13 +47,23 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
     required this.trendingBox,
     required this.globalMarketBox,
     required this.favoritesBox,
+    this.coinsTtl = AppConstants.coinsCacheTtl,
+    this.coinDetailTtl = AppConstants.coinDetailCacheTtl,
+    this.trendingTtl = AppConstants.trendingCacheTtl,
+    this.globalMarketTtl = AppConstants.globalMarketCacheTtl,
+    this.now,
   });
 
-  final Box<dynamic> coinsBox;
-  final Box<dynamic> coinDetailsBox;
-  final Box<dynamic> trendingBox;
-  final Box<dynamic> globalMarketBox;
-  final Box<dynamic> favoritesBox;
+  final Box<CacheRecord> coinsBox;
+  final Box<CacheRecord> coinDetailsBox;
+  final Box<CacheRecord> trendingBox;
+  final Box<CacheRecord> globalMarketBox;
+  final Box<bool> favoritesBox;
+  final Duration coinsTtl;
+  final Duration coinDetailTtl;
+  final Duration trendingTtl;
+  final Duration globalMarketTtl;
+  final DateTime Function()? now;
 
   @override
   Future<void> cacheCoins({
@@ -59,14 +72,25 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
   }) {
     return coinsBox.put(
       '${StorageKeys.coinsPagePrefix}$page',
-      coins.map((coin) => coin.toJson()).toList(),
+      _record(
+        payload: coins.map((coin) => coin.toJson()).toList(),
+        ttl: coinsTtl,
+      ),
     );
   }
 
   @override
   Future<List<CoinModel>> getCachedCoins(int page) async {
-    final value = coinsBox.get('${StorageKeys.coinsPagePrefix}$page');
-    return _readMapList(value).map(CoinModel.fromJson).toList();
+    final record = await _getFreshRecord(
+      coinsBox,
+      '${StorageKeys.coinsPagePrefix}$page',
+    );
+
+    if (record == null) {
+      return const [];
+    }
+
+    return _readMapList(record.payload).map(CoinModel.fromJson).toList();
   }
 
   @override
@@ -74,8 +98,13 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
     final normalizedQuery = query.trim().toLowerCase();
     final coins = <CoinModel>[];
 
-    for (final value in coinsBox.values) {
-      coins.addAll(_readMapList(value).map(CoinModel.fromJson));
+    for (final key in coinsBox.keys.toList()) {
+      final record = await _getFreshRecord(coinsBox, key);
+      if (record == null) {
+        continue;
+      }
+
+      coins.addAll(_readMapList(record.payload).map(CoinModel.fromJson));
     }
 
     final byId = <String, CoinModel>{
@@ -92,14 +121,17 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
   Future<void> cacheCoinDetail(CoinDetailModel coin) {
     return coinDetailsBox.put(
       '${StorageKeys.coinDetailPrefix}${coin.id}',
-      coin.toJson(),
+      _record(payload: coin.toJson(), ttl: coinDetailTtl),
     );
   }
 
   @override
   Future<CoinDetailModel?> getCachedCoinDetail(String coinId) async {
-    final value = coinDetailsBox.get('${StorageKeys.coinDetailPrefix}$coinId');
-    final map = _readMap(value);
+    final record = await _getFreshRecord(
+      coinDetailsBox,
+      '${StorageKeys.coinDetailPrefix}$coinId',
+    );
+    final map = _readMap(record?.payload);
 
     if (map == null) {
       return null;
@@ -112,28 +144,41 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
   Future<void> cacheTrendingCoins(List<TrendingCoinModel> coins) {
     return trendingBox.put(
       StorageKeys.trendingCoins,
-      coins.map((coin) => coin.toJson()).toList(),
+      _record(
+        payload: coins.map((coin) => coin.toJson()).toList(),
+        ttl: trendingTtl,
+      ),
     );
   }
 
   @override
   Future<List<TrendingCoinModel>> getCachedTrendingCoins() async {
-    final value = trendingBox.get(StorageKeys.trendingCoins);
-    return _readMapList(value).map(TrendingCoinModel.fromJson).toList();
+    final record =
+        await _getFreshRecord(trendingBox, StorageKeys.trendingCoins);
+    if (record == null) {
+      return const [];
+    }
+
+    return _readMapList(record.payload)
+        .map(TrendingCoinModel.fromJson)
+        .toList();
   }
 
   @override
   Future<void> cacheGlobalMarket(GlobalMarketModel market) {
     return globalMarketBox.put(
       StorageKeys.globalMarket,
-      market.toJson()..['cached_at'] = DateFormatter.readable(DateTime.now()),
+      _record(payload: market.toJson(), ttl: globalMarketTtl),
     );
   }
 
   @override
   Future<GlobalMarketModel?> getCachedGlobalMarket() async {
-    final value = globalMarketBox.get(StorageKeys.globalMarket);
-    final map = _readMap(value);
+    final record = await _getFreshRecord(
+      globalMarketBox,
+      StorageKeys.globalMarket,
+    );
+    final map = _readMap(record?.payload);
 
     if (map == null) {
       return null;
@@ -167,9 +212,66 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
   @override
   Future<Set<String>> getFavoriteIds() async {
     return favoritesBox.keys
-        .where((key) => favoritesBox.get(key) == true)
+        .where((key) => favoritesBox.get(key, defaultValue: false) == true)
         .map((key) => key.toString())
         .toSet();
+  }
+
+  @override
+  Future<void> invalidateExpiredCache() async {
+    await Future.wait([
+      _deleteExpiredRecords(coinsBox),
+      _deleteExpiredRecords(coinDetailsBox),
+      _deleteExpiredRecords(trendingBox),
+      _deleteExpiredRecords(globalMarketBox),
+    ]);
+  }
+
+  CacheRecord _record({
+    required Object payload,
+    required Duration ttl,
+  }) {
+    return CacheRecord(
+      payload: payload,
+      cachedAt: _now,
+      ttl: ttl,
+    );
+  }
+
+  Future<CacheRecord?> _getFreshRecord(
+    Box<CacheRecord> box,
+    Object key,
+  ) async {
+    final record = box.get(key);
+    if (record == null) {
+      return null;
+    }
+
+    if (record.isExpired(_now)) {
+      await box.delete(key);
+      return null;
+    }
+
+    return record;
+  }
+
+  Future<void> _deleteExpiredRecords(Box<CacheRecord> box) async {
+    final expiredKeys = <Object>[];
+
+    for (final key in box.keys) {
+      final record = box.get(key);
+      if (record == null || record.isExpired(_now)) {
+        expiredKeys.add(key);
+      }
+    }
+
+    if (expiredKeys.isNotEmpty) {
+      await box.deleteAll(expiredKeys);
+    }
+  }
+
+  DateTime get _now {
+    return (now?.call() ?? DateTime.now()).toUtc();
   }
 
   List<Map<String, dynamic>> _readMapList(dynamic value) {

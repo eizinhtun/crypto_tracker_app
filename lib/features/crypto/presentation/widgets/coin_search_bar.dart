@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_constants.dart';
-import '../../../../core/utils/debounce.dart';
-
 class CoinSearchBar extends StatefulWidget {
   const CoinSearchBar({
     required this.onChanged,
@@ -19,13 +16,11 @@ class CoinSearchBar extends StatefulWidget {
 
 class _CoinSearchBarState extends State<CoinSearchBar> {
   late final TextEditingController _controller;
-  late final Debounce _debounce;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialValue);
-    _debounce = Debounce(AppConstants.debounceDuration);
   }
 
   @override
@@ -39,7 +34,6 @@ class _CoinSearchBarState extends State<CoinSearchBar> {
 
   @override
   void dispose() {
-    _debounce.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -72,9 +66,7 @@ class _CoinSearchBarState extends State<CoinSearchBar> {
             },
           ),
         ),
-        onChanged: (value) {
-          _debounce(() => widget.onChanged(value));
-        },
+        onChanged: widget.onChanged,
       ),
     );
   }

@@ -1,14 +1,15 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/error/result.dart';
+import '../../../../../core/utils/html_text_formatter.dart';
 import '../../../domain/usecases/get_coin_detail_usecase.dart';
 import '../../../domain/usecases/get_favorite_status_usecase.dart';
 import '../../../domain/usecases/toggle_favorite_usecase.dart';
 import 'coin_detail_event.dart';
 import 'coin_detail_state.dart';
 
-class CoinDetailBloc extends Bloc<CoinDetailEvent, CoinDetailState> {
-  CoinDetailBloc({
+class CoinDetailViewModel extends Bloc<CoinDetailEvent, CoinDetailState> {
+  CoinDetailViewModel({
     required this.getCoinDetailUseCase,
     required this.getFavoriteStatusUseCase,
     required this.toggleFavoriteUseCase,
@@ -38,12 +39,15 @@ class CoinDetailBloc extends Bloc<CoinDetailEvent, CoinDetailState> {
     };
 
     switch (detailResult) {
-      case Success(value: final detail):
+      case Success(value: final detailResult):
+        final detail = detailResult.data;
         emit(
           state.copyWith(
             status: CoinDetailStatus.success,
             detail: detail,
+            descriptionText: HtmlTextFormatter.plainText(detail.description),
             isFavorite: isFavorite,
+            isOffline: detailResult.isFromCache,
             clearError: true,
           ),
         );

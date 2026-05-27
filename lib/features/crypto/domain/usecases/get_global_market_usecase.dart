@@ -7,7 +7,7 @@ class GetGlobalMarketUseCase {
 
   final CryptoRepository repository;
 
-  Future<Result<GlobalMarket>> call() {
+  Future<Result<DataResult<GlobalMarket>>> call() {
     return repository.getGlobalMarket();
   }
 }

@@ -1,13 +1,19 @@
 import '../../domain/entities/global_market.dart';
 
-class GlobalMarketModel extends GlobalMarket {
+class GlobalMarketModel {
   const GlobalMarketModel({
-    required super.activeCryptocurrencies,
-    required super.markets,
-    required super.totalMarketCapUsd,
-    required super.totalVolumeUsd,
-    required super.marketCapChangePercentage24hUsd,
+    required this.activeCryptocurrencies,
+    required this.markets,
+    required this.totalMarketCapUsd,
+    required this.totalVolumeUsd,
+    required this.marketCapChangePercentage24hUsd,
   });
+
+  final int activeCryptocurrencies;
+  final int markets;
+  final double totalMarketCapUsd;
+  final double totalVolumeUsd;
+  final double marketCapChangePercentage24hUsd;
 
   factory GlobalMarketModel.fromJson(Map<String, dynamic> json) {
     final data = json['data'] is Map
@@ -21,6 +27,16 @@ class GlobalMarketModel extends GlobalMarket {
       totalVolumeUsd: _nestedDouble(data['total_volume'], 'usd') ?? 0,
       marketCapChangePercentage24hUsd:
           _toDouble(data['market_cap_change_percentage_24h_usd']) ?? 0,
+    );
+  }
+
+  GlobalMarket toEntity() {
+    return GlobalMarket(
+      activeCryptocurrencies: activeCryptocurrencies,
+      markets: markets,
+      totalMarketCapUsd: totalMarketCapUsd,
+      totalVolumeUsd: totalVolumeUsd,
+      marketCapChangePercentage24hUsd: marketCapChangePercentage24hUsd,
     );
   }
 

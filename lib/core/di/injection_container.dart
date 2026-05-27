@@ -9,14 +9,16 @@ import '../../features/crypto/data/repositories/crypto_repository_impl.dart';
 import '../../features/crypto/domain/repositories/crypto_repository.dart';
 import '../../features/crypto/domain/usecases/get_coin_detail_usecase.dart';
 import '../../features/crypto/domain/usecases/get_coins_usecase.dart';
+import '../../features/crypto/domain/usecases/get_crypto_overview_usecase.dart';
 import '../../features/crypto/domain/usecases/get_favorite_status_usecase.dart';
 import '../../features/crypto/domain/usecases/get_global_market_usecase.dart';
 import '../../features/crypto/domain/usecases/get_trending_coins_usecase.dart';
 import '../../features/crypto/domain/usecases/search_coins_usecase.dart';
 import '../../features/crypto/domain/usecases/toggle_favorite_usecase.dart';
-import '../../features/crypto/presentation/bloc/coin_detail/coin_detail_bloc.dart';
-import '../../features/crypto/presentation/bloc/coin_list/coin_list_bloc.dart';
-import '../../features/crypto/presentation/bloc/favorite/favorite_bloc.dart';
+import '../../features/crypto/presentation/viewmodels/coin_detail/coin_detail_view_model.dart';
+import '../../features/crypto/presentation/viewmodels/coin_list/coin_list_view_model.dart';
+import '../../features/crypto/presentation/viewmodels/favorite/favorite_view_model.dart';
+import '../database/cache_record.dart';
 import '../database/hive_boxes.dart';
 import '../network/dio_client.dart';
 import '../network/network_info.dart';
@@ -35,24 +37,24 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<NetworkInfo>(
       () => ConnectivityNetworkInfo(sl()),
     )
-    ..registerLazySingleton<Box<dynamic>>(
-      () => Hive.box<dynamic>(HiveBoxes.coins),
+    ..registerLazySingleton<Box<CacheRecord>>(
+      () => Hive.box<CacheRecord>(HiveBoxes.coins),
       instanceName: HiveBoxes.coins,
     )
-    ..registerLazySingleton<Box<dynamic>>(
-      () => Hive.box<dynamic>(HiveBoxes.coinDetails),
+    ..registerLazySingleton<Box<CacheRecord>>(
+      () => Hive.box<CacheRecord>(HiveBoxes.coinDetails),
       instanceName: HiveBoxes.coinDetails,
     )
-    ..registerLazySingleton<Box<dynamic>>(
-      () => Hive.box<dynamic>(HiveBoxes.trending),
+    ..registerLazySingleton<Box<CacheRecord>>(
+      () => Hive.box<CacheRecord>(HiveBoxes.trending),
       instanceName: HiveBoxes.trending,
     )
-    ..registerLazySingleton<Box<dynamic>>(
-      () => Hive.box<dynamic>(HiveBoxes.globalMarket),
+    ..registerLazySingleton<Box<CacheRecord>>(
+      () => Hive.box<CacheRecord>(HiveBoxes.globalMarket),
       instanceName: HiveBoxes.globalMarket,
     )
-    ..registerLazySingleton<Box<dynamic>>(
-      () => Hive.box<dynamic>(HiveBoxes.favorites),
+    ..registerLazySingleton<Box<bool>>(
+      () => Hive.box<bool>(HiveBoxes.favorites),
       instanceName: HiveBoxes.favorites,
     )
     ..registerLazySingleton<CryptoRemoteDataSource>(
@@ -76,29 +78,29 @@ Future<void> configureDependencies() async {
     )
     ..registerLazySingleton(() => GetCoinsUseCase(sl()))
     ..registerLazySingleton(() => GetCoinDetailUseCase(sl()))
+    ..registerLazySingleton(() => GetCryptoOverviewUseCase(sl()))
     ..registerLazySingleton(() => GetTrendingCoinsUseCase(sl()))
     ..registerLazySingleton(() => GetGlobalMarketUseCase(sl()))
     ..registerLazySingleton(() => SearchCoinsUseCase(sl()))
     ..registerLazySingleton(() => ToggleFavoriteUseCase(sl()))
     ..registerLazySingleton(() => GetFavoriteStatusUseCase(sl()))
     ..registerFactory(
-      () => CoinListBloc(
+      () => CoinListViewModel(
         getCoinsUseCase: sl(),
-        getTrendingCoinsUseCase: sl(),
-        getGlobalMarketUseCase: sl(),
+        getCryptoOverviewUseCase: sl(),
         searchCoinsUseCase: sl(),
         toggleFavoriteUseCase: sl(),
       ),
     )
     ..registerFactory(
-      () => CoinDetailBloc(
+      () => CoinDetailViewModel(
         getCoinDetailUseCase: sl(),
         getFavoriteStatusUseCase: sl(),
         toggleFavoriteUseCase: sl(),
       ),
     )
     ..registerFactory(
-      () => FavoriteBloc(
+      () => FavoriteViewModel(
         getFavoriteStatusUseCase: sl(),
         toggleFavoriteUseCase: sl(),
       ),

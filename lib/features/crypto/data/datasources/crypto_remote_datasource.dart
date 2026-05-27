@@ -4,6 +4,7 @@ import '../../../../core/constants/api_constants.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/network/http_error_mapper.dart';
 import '../models/coin_detail_model.dart';
 import '../models/coin_model.dart';
 import '../models/global_market_model.dart';
@@ -142,10 +143,12 @@ class CryptoRemoteDataSourceImpl implements CryptoRemoteDataSource {
         queryParameters: queryParameters,
       );
     } on DioException catch (error) {
-      throw ServerException(
-        error.response?.statusMessage ?? error.message ?? 'Request failed',
-        code: error.response?.statusCode?.toString(),
-      );
+      final mappedError = error.error;
+      if (mappedError is AppException) {
+        throw mappedError;
+      }
+
+      throw HttpErrorMapper.fromDioException(error);
     }
   }
 }

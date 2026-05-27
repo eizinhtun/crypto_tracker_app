@@ -1,4 +1,3 @@
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/result.dart';
@@ -24,7 +23,7 @@ class CryptoRepositoryImpl implements CryptoRepository {
   final NetworkInfo networkInfo;
 
   @override
-  Future<Result<List<Coin>>> getCoins({
+  Future<Result<DataResult<List<Coin>>>> getCoins({
     required int page,
     required int perPage,
   }) async {
@@ -35,93 +34,115 @@ class CryptoRepositoryImpl implements CryptoRepository {
           perPage: perPage,
         );
         await localDataSource.cacheCoins(page: page, coins: coins);
-        return Result.success(await _withFavoriteStatus(coins));
+        return Result.success(
+          DataResult.remote(await _toFavoriteAwareCoins(coins)),
+        );
       } on AppException catch (error) {
-        return _cachedCoins(page, error.message);
+        return _cachedCoins(page, _failureFromException(error));
       } on Object catch (error) {
-        return _cachedCoins(page, error.toString());
+        return _cachedCoins(page, UnknownFailure(error.toString()));
       }
     }
 
-    return _cachedCoins(page, 'No internet connection');
+    return _cachedCoins(
+      page,
+      const NetworkFailure('No internet connection'),
+    );
   }
 
   @override
-  Future<Result<CoinDetail>> getCoinDetail(String coinId) async {
+  Future<Result<DataResult<CoinDetail>>> getCoinDetail(String coinId) async {
     if (await networkInfo.isConnected) {
       try {
         final detail = await remoteDataSource.getCoinDetail(coinId);
         await localDataSource.cacheCoinDetail(detail);
-        return Result.success(detail);
+        return Result.success(DataResult.remote(detail.toEntity()));
       } on AppException catch (error) {
-        return _cachedCoinDetail(coinId, error.message);
+        return _cachedCoinDetail(coinId, _failureFromException(error));
       } on Object catch (error) {
-        return _cachedCoinDetail(coinId, error.toString());
+        return _cachedCoinDetail(coinId, UnknownFailure(error.toString()));
       }
     }
 
-    return _cachedCoinDetail(coinId, 'No internet connection');
+    return _cachedCoinDetail(
+      coinId,
+      const NetworkFailure('No internet connection'),
+    );
   }
 
   @override
-  Future<Result<List<TrendingCoin>>> getTrendingCoins() async {
+  Future<Result<DataResult<List<TrendingCoin>>>> getTrendingCoins() async {
     if (await networkInfo.isConnected) {
       try {
         final coins = await remoteDataSource.getTrendingCoins();
         await localDataSource.cacheTrendingCoins(coins);
-        return Result.success(coins);
+        return Result.success(
+          DataResult.remote(coins.map((coin) => coin.toEntity()).toList()),
+        );
       } on AppException catch (error) {
-        return _cachedTrendingCoins(error.message);
+        return _cachedTrendingCoins(_failureFromException(error));
       } on Object catch (error) {
-        return _cachedTrendingCoins(error.toString());
+        return _cachedTrendingCoins(UnknownFailure(error.toString()));
       }
     }
 
-    return _cachedTrendingCoins('No internet connection');
+    return _cachedTrendingCoins(
+      const NetworkFailure('No internet connection'),
+    );
   }
 
   @override
-  Future<Result<GlobalMarket>> getGlobalMarket() async {
+  Future<Result<DataResult<GlobalMarket>>> getGlobalMarket() async {
     if (await networkInfo.isConnected) {
       try {
         final market = await remoteDataSource.getGlobalMarket();
         await localDataSource.cacheGlobalMarket(market);
-        return Result.success(market);
+        return Result.success(DataResult.remote(market.toEntity()));
       } on AppException catch (error) {
-        return _cachedGlobalMarket(error.message);
+        return _cachedGlobalMarket(_failureFromException(error));
       } on Object catch (error) {
-        return _cachedGlobalMarket(error.toString());
+        return _cachedGlobalMarket(UnknownFailure(error.toString()));
       }
     }
 
-    return _cachedGlobalMarket('No internet connection');
+    return _cachedGlobalMarket(
+      const NetworkFailure('No internet connection'),
+    );
   }
 
   @override
-  Future<Result<List<Coin>>> searchCoins(String query) async {
+  Future<Result<DataResult<List<Coin>>>> searchCoins(String query) async {
     final trimmedQuery = query.trim();
     if (trimmedQuery.isEmpty) {
-      return const Result.success([]);
+      return const Result.success(DataResult.local([]));
     }
 
     if (await networkInfo.isConnected) {
       try {
         final coins = await remoteDataSource.searchCoins(trimmedQuery);
-        return Result.success(await _withFavoriteStatus(coins));
+        return Result.success(
+          DataResult.remote(await _toFavoriteAwareCoins(coins)),
+        );
       } on AppException catch (error) {
-        return _cachedSearch(trimmedQuery, error.message);
+        return _cachedSearch(trimmedQuery, _failureFromException(error));
       } on Object catch (error) {
-        return _cachedSearch(trimmedQuery, error.toString());
+        return _cachedSearch(trimmedQuery, UnknownFailure(error.toString()));
       }
     }
 
-    return _cachedSearch(trimmedQuery, 'No internet connection');
+    return _cachedSearch(
+      trimmedQuery,
+      const NetworkFailure('No internet connection'),
+    );
   }
 
   @override
   Future<Result<bool>> toggleFavorite(String coinId) async {
     try {
-      return Result.success(await localDataSource.toggleFavorite(coinId));
+      return Result.success(
+        await localDataSource.toggleFavorite(coinId),
+        source: ResultSource.local,
+      );
     } on AppException catch (error) {
       return Result.failure(CacheFailure(error.message));
     } on Object catch (error) {
@@ -132,7 +153,10 @@ class CryptoRepositoryImpl implements CryptoRepository {
   @override
   Future<Result<bool>> isFavorite(String coinId) async {
     try {
-      return Result.success(await localDataSource.isFavorite(coinId));
+      return Result.success(
+        await localDataSource.isFavorite(coinId),
+        source: ResultSource.local,
+      );
     } on AppException catch (error) {
       return Result.failure(CacheFailure(error.message));
     } on Object catch (error) {
@@ -140,68 +164,91 @@ class CryptoRepositoryImpl implements CryptoRepository {
     }
   }
 
-  Future<Result<List<Coin>>> _cachedCoins(
+  Future<Result<DataResult<List<Coin>>>> _cachedCoins(
     int page,
-    String fallbackMessage,
+    Failure fallbackFailure,
   ) async {
     final cachedCoins = await localDataSource.getCachedCoins(page);
-    if (cachedCoins.isEmpty && page == AppConstants.firstPage) {
-      return Result.failure(CacheFailure(fallbackMessage));
+    if (cachedCoins.isEmpty) {
+      return Result.failure(fallbackFailure);
     }
 
-    return Result.success(await _withFavoriteStatus(cachedCoins));
+    return Result.success(
+      DataResult.cache(await _toFavoriteAwareCoins(cachedCoins)),
+    );
   }
 
-  Future<Result<CoinDetail>> _cachedCoinDetail(
+  Future<Result<DataResult<CoinDetail>>> _cachedCoinDetail(
     String coinId,
-    String fallbackMessage,
+    Failure fallbackFailure,
   ) async {
     final cachedDetail = await localDataSource.getCachedCoinDetail(coinId);
     if (cachedDetail == null) {
-      return Result.failure(CacheFailure(fallbackMessage));
+      return Result.failure(fallbackFailure);
     }
 
-    return Result.success(cachedDetail);
+    return Result.success(DataResult.cache(cachedDetail.toEntity()));
   }
 
-  Future<Result<List<TrendingCoin>>> _cachedTrendingCoins(
-    String fallbackMessage,
+  Future<Result<DataResult<List<TrendingCoin>>>> _cachedTrendingCoins(
+    Failure fallbackFailure,
   ) async {
     final cachedCoins = await localDataSource.getCachedTrendingCoins();
     if (cachedCoins.isEmpty) {
-      return Result.failure(CacheFailure(fallbackMessage));
+      return Result.failure(fallbackFailure);
     }
 
-    return Result.success(cachedCoins);
+    return Result.success(
+      DataResult.cache(cachedCoins.map((coin) => coin.toEntity()).toList()),
+    );
   }
 
-  Future<Result<GlobalMarket>> _cachedGlobalMarket(
-    String fallbackMessage,
+  Future<Result<DataResult<GlobalMarket>>> _cachedGlobalMarket(
+    Failure fallbackFailure,
   ) async {
     final cachedMarket = await localDataSource.getCachedGlobalMarket();
     if (cachedMarket == null) {
-      return Result.failure(CacheFailure(fallbackMessage));
+      return Result.failure(fallbackFailure);
     }
 
-    return Result.success(cachedMarket);
+    return Result.success(DataResult.cache(cachedMarket.toEntity()));
   }
 
-  Future<Result<List<Coin>>> _cachedSearch(
+  Future<Result<DataResult<List<Coin>>>> _cachedSearch(
     String query,
-    String fallbackMessage,
+    Failure fallbackFailure,
   ) async {
     final cachedCoins = await localDataSource.searchCachedCoins(query);
     if (cachedCoins.isEmpty) {
-      return Result.failure(CacheFailure(fallbackMessage));
+      return Result.failure(fallbackFailure);
     }
 
-    return Result.success(await _withFavoriteStatus(cachedCoins));
+    return Result.success(
+      DataResult.cache(await _toFavoriteAwareCoins(cachedCoins)),
+    );
   }
 
-  Future<List<Coin>> _withFavoriteStatus(Iterable<CoinModel> coins) async {
+  Future<List<Coin>> _toFavoriteAwareCoins(Iterable<CoinModel> coins) async {
     final favoriteIds = await localDataSource.getFavoriteIds();
     return coins.map((coin) {
-      return coin.copyWith(isFavorite: favoriteIds.contains(coin.id));
+      return coin.toEntity(isFavorite: favoriteIds.contains(coin.id));
     }).toList();
+  }
+
+  Failure _failureFromException(AppException error) {
+    return switch (error) {
+      BadRequestException() => BadRequestFailure(error.message),
+      UnauthorizedException() => UnauthorizedFailure(error.message),
+      ForbiddenException() => ForbiddenFailure(error.message),
+      NotFoundException() => NotFoundFailure(error.message),
+      RateLimitException(retryAfter: final retryAfter) => RateLimitFailure(
+          error.message,
+          retryAfter: retryAfter,
+        ),
+      CacheException() => CacheFailure(error.message),
+      NetworkException() => NetworkFailure(error.message),
+      ServerException() => ServerFailure(error.message),
+      _ => UnknownFailure(error.message),
+    };
   }
 }

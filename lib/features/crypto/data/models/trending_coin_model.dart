@@ -1,14 +1,21 @@
 import '../../domain/entities/trending_coin.dart';
 
-class TrendingCoinModel extends TrendingCoin {
+class TrendingCoinModel {
   const TrendingCoinModel({
-    required super.id,
-    required super.name,
-    required super.symbol,
-    super.smallImage,
-    super.marketCapRank,
-    super.score,
+    required this.id,
+    required this.name,
+    required this.symbol,
+    this.smallImage,
+    this.marketCapRank,
+    this.score,
   });
+
+  final String id;
+  final String name;
+  final String symbol;
+  final String? smallImage;
+  final int? marketCapRank;
+  final int? score;
 
   factory TrendingCoinModel.fromJson(Map<String, dynamic> json) {
     final item = json['item'] is Map
@@ -22,6 +29,17 @@ class TrendingCoinModel extends TrendingCoin {
       smallImage: item['small'] as String? ?? item['thumb'] as String?,
       marketCapRank: _toInt(item['market_cap_rank']),
       score: _toInt(item['score']),
+    );
+  }
+
+  TrendingCoin toEntity() {
+    return TrendingCoin(
+      id: id,
+      name: name,
+      symbol: symbol,
+      smallImage: smallImage,
+      marketCapRank: marketCapRank,
+      score: score,
     );
   }
 

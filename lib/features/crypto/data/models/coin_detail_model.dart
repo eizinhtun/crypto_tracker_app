@@ -1,18 +1,29 @@
 import '../../domain/entities/coin_detail.dart';
 
-class CoinDetailModel extends CoinDetail {
+class CoinDetailModel {
   const CoinDetailModel({
-    required super.id,
-    required super.symbol,
-    required super.name,
-    super.image,
-    super.description,
-    super.homepage,
-    super.currentPrice,
-    super.marketCap,
-    super.marketCapRank,
-    super.priceChangePercentage24h,
+    required this.id,
+    required this.symbol,
+    required this.name,
+    this.image,
+    this.description,
+    this.homepage,
+    this.currentPrice,
+    this.marketCap,
+    this.marketCapRank,
+    this.priceChangePercentage24h,
   });
+
+  final String id;
+  final String symbol;
+  final String name;
+  final String? image;
+  final String? description;
+  final String? homepage;
+  final double? currentPrice;
+  final double? marketCap;
+  final int? marketCapRank;
+  final double? priceChangePercentage24h;
 
   factory CoinDetailModel.fromJson(Map<String, dynamic> json) {
     final description = _asMap(json['description']);
@@ -34,6 +45,21 @@ class CoinDetailModel extends CoinDetail {
       marketCapRank: _toInt(json['market_cap_rank']),
       priceChangePercentage24h:
           _toDouble(marketData['price_change_percentage_24h']),
+    );
+  }
+
+  CoinDetail toEntity() {
+    return CoinDetail(
+      id: id,
+      symbol: symbol,
+      name: name,
+      image: image,
+      description: description,
+      homepage: homepage,
+      currentPrice: currentPrice,
+      marketCap: marketCap,
+      marketCapRank: marketCapRank,
+      priceChangePercentage24h: priceChangePercentage24h,
     );
   }
 
