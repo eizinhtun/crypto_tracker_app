@@ -1,7 +1,7 @@
+import 'package:bloc_test/bloc_test.dart';
 import 'package:crypto_tracker_app/core/constants/app_constants.dart';
 import 'package:crypto_tracker_app/core/error/result.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/coin.dart';
-import 'package:crypto_tracker_app/features/crypto/domain/entities/coin_detail.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/global_market.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/trending_coin.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/repositories/crypto_repository.dart';
@@ -13,59 +13,154 @@ import 'package:crypto_tracker_app/features/crypto/presentation/viewmodels/coin_
 import 'package:crypto_tracker_app/features/crypto/presentation/viewmodels/coin_list/coin_list_state.dart';
 import 'package:crypto_tracker_app/features/crypto/presentation/viewmodels/coin_list/coin_list_view_model.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 void main() {
   group('CoinListViewModel', () {
-    test('debounces search input and only searches for the latest query',
-        () async {
-      final repository = _FakeCryptoRepository();
-      final viewModel = _createViewModel(repository);
-      addTearDown(viewModel.close);
+    late _MockCryptoRepository repository;
 
-      viewModel
-        ..add(const CoinListSearchChanged('bit'))
-        ..add(const CoinListSearchChanged('bitcoin'));
-
-      await Future<void>.delayed(
-        AppConstants.debounceDuration + const Duration(milliseconds: 100),
-      );
-
-      expect(repository.searchQueries, ['bitcoin']);
-      expect(viewModel.state.query, 'bitcoin');
+    setUp(() {
+      repository = _MockCryptoRepository();
     });
 
-    test('decides when scroll position should request the next page', () async {
-      final repository = _FakeCryptoRepository();
-      final viewModel = _createViewModel(repository);
-      addTearDown(viewModel.close);
+    blocTest<CoinListViewModel, CoinListState>(
+      'Given remote overview succeeds, when started, then emits online success state',
+      build: () {
+        _stubOverview(repository, source: ResultSource.remote);
+        return _createViewModel(repository);
+      },
+      act: (viewModel) => viewModel.add(const CoinListStarted()),
+      expect: () => [
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.loading),
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.success)
+            .having((state) => state.coins.first.id, 'first coin id', 'bitcoin')
+            .having((state) => state.isOffline, 'isOffline', isFalse),
+      ],
+      verify: (_) {
+        verify(
+          () => repository.getCoins(
+            page: AppConstants.firstPage,
+            perPage: AppConstants.defaultPageSize,
+          ),
+        ).called(1);
+      },
+    );
 
-      viewModel.add(
-        const CoinListScrollChanged(
-          pixels: 699,
-          maxScrollExtent: 1000,
-        ),
-      );
+    blocTest<CoinListViewModel, CoinListState>(
+      'Given cached overview succeeds, when started, then emits offline success state',
+      build: () {
+        _stubOverview(repository, source: ResultSource.cache);
+        return _createViewModel(repository);
+      },
+      act: (viewModel) => viewModel.add(const CoinListStarted()),
+      expect: () => [
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.loading),
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.success)
+            .having((state) => state.coins.first.id, 'first coin id', 'bitcoin')
+            .having((state) => state.isOffline, 'isOffline', isTrue),
+      ],
+    );
 
-      await Future<void>.delayed(const Duration(milliseconds: 25));
-      expect(repository.requestedCoinPages, isEmpty);
+    blocTest<CoinListViewModel, CoinListState>(
+      'Given rapid search input, when debounce completes, then only latest query is searched',
+      build: () {
+        when(() => repository.searchCoins('bitcoin')).thenAnswer(
+          (_) async => const Result.success(DataResult.remote(_coins)),
+        );
+        return _createViewModel(repository);
+      },
+      act: (viewModel) {
+        viewModel
+          ..add(const CoinListSearchChanged('bit'))
+          ..add(const CoinListSearchChanged('bitcoin'));
+      },
+      wait: AppConstants.debounceDuration + const Duration(milliseconds: 100),
+      verify: (_) {
+        verifyNever(() => repository.searchCoins('bit'));
+        verify(() => repository.searchCoins('bitcoin')).called(1);
+      },
+    );
 
-      viewModel.add(
+    blocTest<CoinListViewModel, CoinListState>(
+      'Given a successful list, when favorite is toggled, then selected coin is updated',
+      build: () {
+        when(() => repository.toggleFavorite('bitcoin')).thenAnswer(
+          (_) async => const Result.success(true, source: ResultSource.local),
+        );
+        return _createViewModel(repository);
+      },
+      seed: () => CoinListState.initial().copyWith(
+        status: CoinListStatus.success,
+        coins: _coins,
+      ),
+      act: (viewModel) =>
+          viewModel.add(const CoinListFavoriteToggled('bitcoin')),
+      expect: () => [
+        isA<CoinListState>()
+            .having((state) => state.coins.first.isFavorite, 'favorite', isTrue)
+            .having((state) => state.status, 'status', CoinListStatus.success),
+      ],
+      verify: (_) {
+        verify(() => repository.toggleFavorite('bitcoin')).called(1);
+      },
+    );
+
+    blocTest<CoinListViewModel, CoinListState>(
+      'Given scroll threshold is reached, when scroll changes, then next page is requested',
+      build: () {
+        when(
+          () => repository.getCoins(
+            page: 2,
+            perPage: AppConstants.defaultPageSize,
+          ),
+        ).thenAnswer(
+          (_) async => const Result.success(
+            DataResult.remote([
+              Coin(id: 'solana', symbol: 'sol', name: 'Solana'),
+            ]),
+          ),
+        );
+        return _createViewModel(repository);
+      },
+      seed: () => CoinListState.initial().copyWith(
+        status: CoinListStatus.success,
+        coins: _coins,
+        page: 1,
+      ),
+      act: (viewModel) => viewModel.add(
         const CoinListScrollChanged(
           pixels: 700,
           maxScrollExtent: 1000,
         ),
-      );
-
-      await viewModel.stream.firstWhere(
-        (state) => state.status == CoinListStatus.success,
-      );
-
-      expect(repository.requestedCoinPages, [2]);
-    });
+      ),
+      expect: () => [
+        isA<CoinListState>().having(
+          (state) => state.status,
+          'status',
+          CoinListStatus.loadingMore,
+        ),
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.success)
+            .having((state) => state.coins.length, 'coin count', 2)
+            .having((state) => state.page, 'page', 2),
+      ],
+      verify: (_) {
+        verify(
+          () => repository.getCoins(
+            page: 2,
+            perPage: AppConstants.defaultPageSize,
+          ),
+        ).called(1);
+      },
+    );
   });
 }
 
-CoinListViewModel _createViewModel(_FakeCryptoRepository repository) {
+CoinListViewModel _createViewModel(CryptoRepository repository) {
   return CoinListViewModel(
     getCoinsUseCase: GetCoinsUseCase(repository),
     getCryptoOverviewUseCase: GetCryptoOverviewUseCase(repository),
@@ -74,66 +169,55 @@ CoinListViewModel _createViewModel(_FakeCryptoRepository repository) {
   );
 }
 
-class _FakeCryptoRepository implements CryptoRepository {
-  final searchQueries = <String>[];
-  final requestedCoinPages = <int>[];
-
-  @override
-  Future<Result<DataResult<List<Coin>>>> searchCoins(String query) async {
-    searchQueries.add(query);
-    return Result.success(
-      DataResult.remote([
-        Coin(
-          id: query,
-          symbol: query,
-          name: query,
-        ),
-      ]),
-    );
-  }
-
-  @override
-  Future<Result<DataResult<List<Coin>>>> getCoins({
-    required int page,
-    required int perPage,
-  }) async {
-    requestedCoinPages.add(page);
-    return Result.success(
-      DataResult.remote(
-        List.generate(
-          perPage,
-          (index) => Coin(
-            id: 'coin-$page-$index',
-            symbol: 'c$index',
-            name: 'Coin $index',
-          ),
-        ),
+void _stubOverview(
+  _MockCryptoRepository repository, {
+  required ResultSource source,
+}) {
+  when(
+    () => repository.getCoins(
+      page: AppConstants.firstPage,
+      perPage: AppConstants.defaultPageSize,
+    ),
+  ).thenAnswer(
+    (_) async => Result.success(
+      DataResult(
+        _coins,
+        source: source,
       ),
-    );
-  }
-
-  @override
-  Future<Result<bool>> toggleFavorite(String coinId) async {
-    return const Result.success(true, source: ResultSource.local);
-  }
-
-  @override
-  Future<Result<DataResult<CoinDetail>>> getCoinDetail(String coinId) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<Result<DataResult<GlobalMarket>>> getGlobalMarket() {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<Result<DataResult<List<TrendingCoin>>>> getTrendingCoins() {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<Result<bool>> isFavorite(String coinId) {
-    throw UnimplementedError();
-  }
+    ),
+  );
+  when(() => repository.getTrendingCoins()).thenAnswer(
+    (_) async => Result.success(
+      DataResult(
+        _trendingCoins,
+        source: source,
+      ),
+    ),
+  );
+  when(() => repository.getGlobalMarket()).thenAnswer(
+    (_) async => Result.success(
+      DataResult(
+        _globalMarket,
+        source: source,
+      ),
+    ),
+  );
 }
+
+const _coins = [
+  Coin(id: 'bitcoin', symbol: 'btc', name: 'Bitcoin'),
+];
+
+const _trendingCoins = [
+  TrendingCoin(id: 'bitcoin', symbol: 'btc', name: 'Bitcoin'),
+];
+
+const _globalMarket = GlobalMarket(
+  activeCryptocurrencies: 10000,
+  markets: 1000,
+  totalMarketCapUsd: 2000000000000,
+  totalVolumeUsd: 90000000000,
+  marketCapChangePercentage24hUsd: -0.4,
+);
+
+class _MockCryptoRepository extends Mock implements CryptoRepository {}

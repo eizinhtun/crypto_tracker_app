@@ -18,14 +18,10 @@ class DetailContent extends StatelessWidget {
     final change = detail.priceChangePercentage24h ?? 0;
     final isPositive = change >= 0;
     final changeColor = isPositive ? AppColors.positive : AppColors.negative;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryText =
-        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
-    final secondaryText =
-        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final colors = _DetailColors.from(context);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -35,7 +31,7 @@ class DetailContent extends StatelessWidget {
             Expanded(
               child: _PriceHeader(
                 name: detail.name,
-                price: CurrencyFormatter.usd(detail.currentPrice),
+                price: CurrencyFormatter.marketPrice(detail.currentPrice),
                 percentage: CurrencyFormatter.percentage(change),
                 percentageColor: changeColor,
               ),
@@ -45,13 +41,15 @@ class DetailContent extends StatelessWidget {
         const SizedBox(height: 30),
         const _SectionTitle('MARKET STATS'),
         const SizedBox(height: 12),
-        GridView.count(
-          crossAxisCount: 2,
+        GridView(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: 2.15,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            mainAxisExtent: 88,
+          ),
           children: [
             _StatCard(
               label: 'MARKET CAP',
@@ -63,14 +61,14 @@ class DetailContent extends StatelessWidget {
             ),
             _StatCard(
               label: 'ALL-TIME HIGH',
-              value: CurrencyFormatter.usd(detail.allTimeHigh),
+              value: CurrencyFormatter.marketPrice(detail.allTimeHigh),
               subValue: CurrencyFormatter.percentage(
                   detail.allTimeHighChangePercentage),
               subValueColor: AppColors.negative,
             ),
             _StatCard(
               label: 'ALL-TIME LOW',
-              value: CurrencyFormatter.usd(detail.allTimeLow),
+              value: CurrencyFormatter.marketPrice(detail.allTimeLow),
               subValue: CurrencyFormatter.percentage(
                   detail.allTimeLowChangePercentage),
               subValueColor: AppColors.positive,
@@ -100,17 +98,19 @@ class DetailContent extends StatelessWidget {
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 height: 1.45,
                 fontWeight: FontWeight.w500,
-                color: primaryText,
+                color: colors.bodyText,
               ),
         ),
         if ((detail.homepage ?? '').isNotEmpty) ...[
           const SizedBox(height: 20),
           Text(
-            '○  SOURCE  ·  ${detail.homepage}',
+            '○  SOURCE  ·  ${_sourceHost(detail.homepage!)}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   letterSpacing: 1.4,
                   fontWeight: FontWeight.w700,
-                  color: secondaryText,
+                  color: colors.secondaryText,
                 ),
           ),
         ],
@@ -130,6 +130,15 @@ class DetailContent extends StatelessWidget {
     }
 
     return '${value.toStringAsFixed(2)} ${symbol.toUpperCase()}';
+  }
+
+  String _sourceHost(String homepage) {
+    final host = Uri.tryParse(homepage)?.host;
+    if (host == null || host.isEmpty) {
+      return homepage;
+    }
+
+    return host.startsWith('www.') ? host.substring(4) : host;
   }
 }
 
@@ -176,11 +185,7 @@ class _PriceHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isNegative = percentage.trim().startsWith('-');
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryText =
-        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
-    final secondaryText =
-        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final colors = _DetailColors.from(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -190,7 +195,7 @@ class _PriceHeader extends StatelessWidget {
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 letterSpacing: 2,
                 fontWeight: FontWeight.w800,
-                color: secondaryText,
+                color: colors.secondaryText,
               ),
         ),
         const SizedBox(height: 4),
@@ -198,8 +203,10 @@ class _PriceHeader extends StatelessWidget {
           price,
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
                 fontWeight: FontWeight.w800,
-                letterSpacing: -1.5,
-                color: primaryText,
+                fontSize: 36,
+                height: 1,
+                letterSpacing: 0,
+                color: colors.primaryText,
               ),
         ),
         const SizedBox(height: 6),
@@ -223,7 +230,7 @@ class _PriceHeader extends StatelessWidget {
             Text(
               '24h',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: secondaryText,
+                    color: colors.secondaryText,
                     fontWeight: FontWeight.w700,
                   ),
             ),
@@ -241,16 +248,14 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final secondaryText =
-        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final colors = _DetailColors.from(context);
 
     return Text(
       title,
       style: Theme.of(context).textTheme.labelMedium?.copyWith(
             letterSpacing: 2.2,
             fontWeight: FontWeight.w800,
-            color: secondaryText,
+            color: colors.secondaryText,
           ),
     );
   }
@@ -271,23 +276,14 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final cardColor = isDark ? AppColors.darkCard : AppColors.lightCard;
-
-    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
-    final primaryText =
-        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
-
-    final secondaryText =
-        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final colors = _DetailColors.from(context);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 13, 12, 12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 11),
       decoration: BoxDecoration(
-        color: cardColor,
+        color: colors.card,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,33 +294,67 @@ class _StatCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: secondaryText,
+                  color: colors.secondaryText,
                   letterSpacing: 1.4,
                   fontWeight: FontWeight.w800,
                 ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 5),
           Text(
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: primaryText,
+                  color: colors.primaryText,
                   fontWeight: FontWeight.w900,
+                  height: 1.1,
                 ),
           ),
           if (subValue != null) ...[
-            const SizedBox(height: 2),
+            const SizedBox(height: 1),
             Text(
               subValue!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: subValueColor,
                     fontWeight: FontWeight.w800,
+                    height: 1.1,
                   ),
             ),
           ],
         ],
       ),
+    );
+  }
+}
+
+class _DetailColors {
+  const _DetailColors({
+    required this.card,
+    required this.border,
+    required this.primaryText,
+    required this.secondaryText,
+    required this.bodyText,
+  });
+
+  final Color card;
+  final Color border;
+  final Color primaryText;
+  final Color secondaryText;
+  final Color bodyText;
+
+  static _DetailColors from(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return _DetailColors(
+      card: isDark ? AppColors.darkCard : AppColors.lightCard,
+      border: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+      primaryText:
+          isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+      secondaryText:
+          isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+      bodyText: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
     );
   }
 }

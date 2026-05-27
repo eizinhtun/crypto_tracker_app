@@ -24,6 +24,11 @@ Model      = domain entities, use cases, repositories, and data sources
 - Model: domain entities, repository contracts, repository implementations,
   remote data sources, local data sources, and DTOs.
 
+The source tree intentionally uses `presentation/viewmodels` instead of
+`presentation/bloc`, and the classes are named `*ViewModel` rather than
+`*Bloc`. They still extend `Bloc` because BLoC is the chosen state-management
+mechanism for the ViewModel layer.
+
 The BLoC package is an implementation detail of the ViewModel layer. ViewModels:
 
 - expose immutable UI state;
@@ -210,6 +215,19 @@ and list/detail ViewModels merge favorite status into the renderable state.
 - Data: DTOs, remote/local data sources, and repository implementations.
 - Core: shared infrastructure such as networking, database initialization,
   error/result types, dependency injection, theme, and utilities.
+
+## Architecture Tests
+
+The test suite includes executable architecture boundary checks in
+`test/architecture/architecture_boundary_test.dart`:
+
+- presentation files cannot import Dio, Hive, get_it, core network/database
+  infrastructure, or data-layer implementations;
+- domain files cannot import Flutter, BLoC, Dio, Hive, presentation, data, core
+  network, or core database infrastructure.
+
+These tests make the "no UI-direct-to-API" and dependency-direction rules
+reviewable in CI.
 
 ## Reviewer Notes
 

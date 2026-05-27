@@ -1,8 +1,6 @@
+import 'package:bloc_test/bloc_test.dart';
 import 'package:crypto_tracker_app/core/error/result.dart';
-import 'package:crypto_tracker_app/features/crypto/domain/entities/coin.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/coin_detail.dart';
-import 'package:crypto_tracker_app/features/crypto/domain/entities/global_market.dart';
-import 'package:crypto_tracker_app/features/crypto/domain/entities/trending_coin.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/repositories/crypto_repository.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/usecases/get_coin_detail_usecase.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/usecases/get_favorite_status_usecase.dart';
@@ -11,75 +9,99 @@ import 'package:crypto_tracker_app/features/crypto/presentation/viewmodels/coin_
 import 'package:crypto_tracker_app/features/crypto/presentation/viewmodels/coin_detail/coin_detail_state.dart';
 import 'package:crypto_tracker_app/features/crypto/presentation/viewmodels/coin_detail/coin_detail_view_model.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 void main() {
   group('CoinDetailViewModel', () {
-    test('maps HTML description into renderable state text', () async {
-      final repository = _FakeCryptoRepository();
-      final viewModel = CoinDetailViewModel(
-        getCoinDetailUseCase: GetCoinDetailUseCase(repository),
-        getFavoriteStatusUseCase: GetFavoriteStatusUseCase(repository),
-        toggleFavoriteUseCase: ToggleFavoriteUseCase(repository),
-      );
-      addTearDown(viewModel.close);
+    late _MockCryptoRepository repository;
 
-      viewModel.add(const CoinDetailRequested('bitcoin'));
-
-      final state = await viewModel.stream.firstWhere(
-        (state) => state.status == CoinDetailStatus.success,
-      );
-
-      expect(state.detail?.id, 'bitcoin');
-      expect(state.descriptionText, 'Bitcoin & Ethereum');
+    setUp(() {
+      repository = _MockCryptoRepository();
     });
+
+    blocTest<CoinDetailViewModel, CoinDetailState>(
+      'Given remote detail succeeds, when requested, then emits renderable detail state',
+      build: () {
+        _stubDetail(repository, source: ResultSource.remote);
+        _stubFavorite(repository, isFavorite: false);
+        return _createViewModel(repository);
+      },
+      act: (viewModel) => viewModel.add(const CoinDetailRequested('bitcoin')),
+      expect: () => [
+        isA<CoinDetailState>().having(
+          (state) => state.status,
+          'status',
+          CoinDetailStatus.loading,
+        ),
+        isA<CoinDetailState>()
+            .having((state) => state.status, 'status', CoinDetailStatus.success)
+            .having((state) => state.detail?.id, 'detail id', 'bitcoin')
+            .having(
+              (state) => state.descriptionText,
+              'descriptionText',
+              'Bitcoin & Ethereum',
+            )
+            .having((state) => state.isOffline, 'isOffline', isFalse),
+      ],
+    );
+
+    blocTest<CoinDetailViewModel, CoinDetailState>(
+      'Given cached detail succeeds, when requested, then emits offline detail state',
+      build: () {
+        _stubDetail(repository, source: ResultSource.cache);
+        _stubFavorite(repository, isFavorite: true);
+        return _createViewModel(repository);
+      },
+      act: (viewModel) => viewModel.add(const CoinDetailRequested('bitcoin')),
+      expect: () => [
+        isA<CoinDetailState>().having(
+          (state) => state.status,
+          'status',
+          CoinDetailStatus.loading,
+        ),
+        isA<CoinDetailState>()
+            .having((state) => state.status, 'status', CoinDetailStatus.success)
+            .having((state) => state.isOffline, 'isOffline', isTrue)
+            .having((state) => state.isFavorite, 'isFavorite', isTrue),
+      ],
+    );
   });
 }
 
-class _FakeCryptoRepository implements CryptoRepository {
-  @override
-  Future<Result<DataResult<CoinDetail>>> getCoinDetail(String coinId) async {
-    return Result.success(
-      DataResult.remote(
-        CoinDetail(
-          id: coinId,
+CoinDetailViewModel _createViewModel(CryptoRepository repository) {
+  return CoinDetailViewModel(
+    getCoinDetailUseCase: GetCoinDetailUseCase(repository),
+    getFavoriteStatusUseCase: GetFavoriteStatusUseCase(repository),
+    toggleFavoriteUseCase: ToggleFavoriteUseCase(repository),
+  );
+}
+
+void _stubDetail(
+  _MockCryptoRepository repository, {
+  required ResultSource source,
+}) {
+  when(() => repository.getCoinDetail('bitcoin')).thenAnswer(
+    (_) async => Result.success(
+      DataResult(
+        const CoinDetail(
+          id: 'bitcoin',
           symbol: 'btc',
           name: 'Bitcoin',
           description: '<p>Bitcoin &amp; <strong>Ethereum</strong></p>',
         ),
+        source: source,
       ),
-    );
-  }
-
-  @override
-  Future<Result<bool>> isFavorite(String coinId) async {
-    return const Result.success(false, source: ResultSource.local);
-  }
-
-  @override
-  Future<Result<bool>> toggleFavorite(String coinId) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<Result<DataResult<List<Coin>>>> getCoins({
-    required int page,
-    required int perPage,
-  }) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<Result<DataResult<GlobalMarket>>> getGlobalMarket() {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<Result<DataResult<List<TrendingCoin>>>> getTrendingCoins() {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<Result<DataResult<List<Coin>>>> searchCoins(String query) {
-    throw UnimplementedError();
-  }
+    ),
+  );
 }
+
+void _stubFavorite(
+  _MockCryptoRepository repository, {
+  required bool isFavorite,
+}) {
+  when(() => repository.isFavorite('bitcoin')).thenAnswer(
+    (_) async => Result.success(isFavorite, source: ResultSource.local),
+  );
+}
+
+class _MockCryptoRepository extends Mock implements CryptoRepository {}

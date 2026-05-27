@@ -8,6 +8,11 @@ import '../../../domain/usecases/toggle_favorite_usecase.dart';
 import 'coin_detail_event.dart';
 import 'coin_detail_state.dart';
 
+/// MVVM ViewModel for the coin detail screen.
+///
+/// `Bloc` is the state-management implementation detail. The ViewModel owns
+/// detail loading, favorite state, offline metadata, and presentation-ready
+/// description text for the View.
 class CoinDetailViewModel extends Bloc<CoinDetailEvent, CoinDetailState> {
   CoinDetailViewModel({
     required this.getCoinDetailUseCase,

@@ -1,15 +1,20 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../constants/api_constants.dart';
 import '../constants/app_constants.dart';
 import 'api_key_interceptor.dart';
 import 'http_error_interceptor.dart';
+import 'retry_interceptor.dart';
 
 class DioClient {
   DioClient({
     Dio? dio,
     String apiKey = ApiConstants.apiKey,
     String apiKeyHeader = ApiConstants.apiKeyHeader,
+    int maxRetries = 2,
+    Duration retryBaseDelay = const Duration(milliseconds: 300),
+    bool enableLogging = kDebugMode,
     List<Interceptor> interceptors = const [],
   }) : dio = dio ?? Dio() {
     this.dio.options
@@ -24,8 +29,20 @@ class DioClient {
 
     this.dio.interceptors.addAll([
       ApiKeyInterceptor(apiKey: apiKey, headerName: apiKeyHeader),
+      RetryInterceptor(
+        dio: this.dio,
+        maxRetries: maxRetries,
+        baseDelay: retryBaseDelay,
+      ),
       const HttpErrorInterceptor(),
       ...interceptors,
+      if (enableLogging)
+        LogInterceptor(
+          requestHeader: false,
+          requestBody: false,
+          responseHeader: false,
+          responseBody: false,
+        ),
     ]);
   }
 

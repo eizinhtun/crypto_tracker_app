@@ -4,7 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('CoinModel', () {
-    test('parses CoinGecko market JSON', () {
+    test('Given CoinGecko market JSON, when parsed, then fields are mapped',
+        () {
       final model = CoinModel.fromJson(const {
         'id': 'bitcoin',
         'symbol': 'btc',
@@ -23,7 +24,7 @@ void main() {
       expect(model.priceChangePercentage24h, 1.25);
     });
 
-    test('is a data DTO and maps explicitly to a domain entity', () {
+    test('Given coin DTO, when mapped, then domain entity is explicit', () {
       const model = CoinModel(
         id: 'bitcoin',
         symbol: 'btc',

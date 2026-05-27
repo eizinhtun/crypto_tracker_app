@@ -29,7 +29,7 @@ class GlobalMarketCard extends StatelessWidget {
         boxShadow: [
           if (!colors.isDark)
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.035),
+              color: AppColors.lightTextPrimary.withValues(alpha: 0.035),
               blurRadius: 12,
               offset: const Offset(0, 5),
             ),

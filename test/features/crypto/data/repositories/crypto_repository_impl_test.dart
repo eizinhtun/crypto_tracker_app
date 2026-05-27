@@ -13,7 +13,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('CryptoRepositoryImpl', () {
-    test('returns remote coins, applies favorite status, and caches response',
+    test(
+        'Given remote coins succeed, when coins are requested, then favorites are applied and response is cached',
         () async {
       final remote = _FakeRemoteDataSource()
         ..coins = const [
@@ -40,7 +41,9 @@ void main() {
       expect(local.cachedCoinPages.keys, [1]);
     });
 
-    test('falls back to cached coins with cache source when offline', () async {
+    test(
+        'Given device is offline and cache exists, when coins are requested, then cached data is returned',
+        () async {
       final local = _FakeLocalDataSource()
         ..cachedCoinPages[1] = const [
           CoinModel(id: 'ethereum', symbol: 'eth', name: 'Ethereum'),
@@ -63,7 +66,9 @@ void main() {
       }
     });
 
-    test('falls back to cache when remote request fails', () async {
+    test(
+        'Given remote fails and cache exists, when coins are requested, then cached data is returned with cache source',
+        () async {
       final remote = _FakeRemoteDataSource()
         ..coinsError = const ServerException('Rate limited');
       final local = _FakeLocalDataSource()
@@ -88,7 +93,39 @@ void main() {
       }
     });
 
-    test('returns mapped rate-limit failure when no cache exists', () async {
+    test(
+        'Given remote is rate limited and cache exists, when coins are requested, then cached data is returned',
+        () async {
+      final remote = _FakeRemoteDataSource()
+        ..coinsError = const RateLimitException(
+          'Rate limited',
+          code: '429',
+          retryAfter: Duration(seconds: 30),
+        );
+      final local = _FakeLocalDataSource()
+        ..cachedCoinPages[1] = const [
+          CoinModel(id: 'ethereum', symbol: 'eth', name: 'Ethereum'),
+        ];
+      final repository = CryptoRepositoryImpl(
+        remoteDataSource: remote,
+        localDataSource: local,
+        networkInfo: const _FakeNetworkInfo(isConnected: true),
+      );
+
+      final result = await repository.getCoins(page: 1, perPage: 25);
+
+      switch (result) {
+        case Success(value: final coinsResult):
+          expect(coinsResult.source, ResultSource.cache);
+          expect(coinsResult.data.single.id, 'ethereum');
+        case Error(failure: final failure):
+          fail(failure.message);
+      }
+    });
+
+    test(
+        'Given remote is rate limited and cache is empty, when coins are requested, then rate-limit failure is returned',
+        () async {
       final remote = _FakeRemoteDataSource()
         ..coinsError = const RateLimitException(
           'Rate limited',
@@ -115,7 +152,9 @@ void main() {
       }
     });
 
-    test('persists favorite toggle through local datasource', () async {
+    test(
+        'Given favorite is toggled, when repository handles request, then local datasource persists it',
+        () async {
       final local = _FakeLocalDataSource();
       final repository = CryptoRepositoryImpl(
         remoteDataSource: _FakeRemoteDataSource(),

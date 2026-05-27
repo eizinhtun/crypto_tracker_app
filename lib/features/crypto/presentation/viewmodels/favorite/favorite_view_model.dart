@@ -6,6 +6,10 @@ import '../../../domain/usecases/toggle_favorite_usecase.dart';
 import 'favorite_event.dart';
 import 'favorite_state.dart';
 
+/// MVVM ViewModel for reusable favorite interactions.
+///
+/// This keeps favorite UI state and events out of widgets while delegating
+/// persistence to domain use cases.
 class FavoriteViewModel extends Bloc<FavoriteEvent, FavoriteState> {
   FavoriteViewModel({
     required this.getFavoriteStatusUseCase,

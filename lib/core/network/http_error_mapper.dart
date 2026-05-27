@@ -29,12 +29,12 @@ abstract final class HttpErrorMapper {
           'Unable to verify the server certificate',
           code: 'bad_certificate',
         ),
-      DioExceptionType.badResponse => ServerException(
-          error.message ?? 'Request failed',
+      DioExceptionType.badResponse => const ServerException(
+          'CoinGecko request failed',
           code: 'bad_response',
         ),
-      DioExceptionType.unknown => ServerException(
-          error.message ?? 'Request failed',
+      DioExceptionType.unknown => const ServerException(
+          'CoinGecko request failed',
           code: 'unknown',
         ),
     };

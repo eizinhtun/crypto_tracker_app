@@ -10,7 +10,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('CryptoRemoteDataSourceImpl', () {
-    test('fetches market coins with expected CoinGecko query parameters',
+    test(
+        'Given market coins request, when fetched, then CoinGecko query parameters are sent',
         () async {
       final adapter = _MockDioAdapter(
         responseFor: (options) {
@@ -45,7 +46,8 @@ void main() {
       expect(coins.single.currentPrice, 100000);
     });
 
-    test('fetches global market data', () async {
+    test('Given global endpoint response, when fetched, then market data maps',
+        () async {
       final dataSource = _createDataSource(
         _MockDioAdapter(
           responseFor: (options) {
@@ -74,7 +76,57 @@ void main() {
       expect(market.totalMarketCapUsd, 3000000000000);
     });
 
-    test('searches ids first and then fetches full market data', () async {
+    test(
+        'Given coin detail response, when fetched, then detail market data maps',
+        () async {
+      final dataSource = _createDataSource(
+        _MockDioAdapter(
+          responseFor: (options) {
+            expect(options.uri.path, endsWith('/coins/ethereum'));
+            expect(options.uri.queryParameters['market_data'], 'true');
+
+            return ResponseBody.fromString(
+              jsonEncode({
+                'id': 'ethereum',
+                'symbol': 'eth',
+                'name': 'Ethereum',
+                'market_cap_rank': 2,
+                'image': {'large': 'https://example.com/eth.png'},
+                'description': {'en': 'Ethereum description'},
+                'links': {
+                  'homepage': ['https://ethereum.org/'],
+                },
+                'market_data': {
+                  'current_price': {'usd': 2095.85},
+                  'market_cap': {'usd': 253150000000},
+                  'total_volume': {'usd': 9780000000},
+                  'price_change_percentage_24h': -0.13,
+                  'ath': {'usd': 4878},
+                  'ath_change_percentage': {'usd': -57.03},
+                  'atl': {'usd': 0.43},
+                  'atl_change_percentage': {'usd': 487306.98},
+                  'circulating_supply': 120280000,
+                },
+              }),
+              200,
+              headers: _jsonHeaders,
+            );
+          },
+        ),
+      );
+
+      final detail = await dataSource.getCoinDetail('ethereum');
+
+      expect(detail.id, 'ethereum');
+      expect(detail.currentPrice, 2095.85);
+      expect(detail.marketCap, 253150000000);
+      expect(detail.totalVolume, 9780000000);
+      expect(detail.allTimeLow, 0.43);
+    });
+
+    test(
+        'Given search response ids, when searching, then full market data is fetched',
+        () async {
       final requestedPaths = <String>[];
       final dataSource = _createDataSource(
         _MockDioAdapter(
@@ -140,7 +192,8 @@ void main() {
       expect(coins.first.priceChangePercentage24h, 1.2);
     });
 
-    test('does not fetch market data when search returns no coin ids',
+    test(
+        'Given search has no ids, when searching, then market data is not fetched',
         () async {
       final requestedPaths = <String>[];
       final dataSource = _createDataSource(
@@ -164,7 +217,9 @@ void main() {
       expect(requestedPaths, hasLength(1));
     });
 
-    test('maps rate limits with retry-after metadata', () async {
+    test(
+        'Given CoinGecko returns 429, when request fails, then retry metadata is mapped',
+        () async {
       final dataSource = _createDataSource(
         _MockDioAdapter(
           responseFor: (_) => ResponseBody.fromString(
@@ -193,7 +248,79 @@ void main() {
       );
     });
 
-    test('maps authorization failures', () async {
+    test(
+        'Given CoinGecko returns 500, when request fails, then server exception is mapped',
+        () async {
+      final dataSource = _createDataSource(
+        _MockDioAdapter(
+          responseFor: (_) => ResponseBody.fromString(
+            '{"error":"temporary outage"}',
+            500,
+            statusMessage: 'Internal Server Error',
+            headers: _jsonHeaders,
+          ),
+        ),
+      );
+
+      await expectLater(
+        dataSource.getGlobalMarket(),
+        throwsA(
+          isA<ServerException>()
+              .having((error) => error.code, 'code', '500')
+              .having(
+                (error) => error.message,
+                'message',
+                'temporary outage',
+              ),
+        ),
+      );
+    });
+
+    test(
+        'Given transient server failure, when retry succeeds, then response is returned',
+        () async {
+      var requestCount = 0;
+      final dataSource = _createDataSource(
+        _MockDioAdapter(
+          responseFor: (_) {
+            requestCount++;
+            if (requestCount == 1) {
+              return ResponseBody.fromString(
+                '{"error":"temporary outage"}',
+                500,
+                statusMessage: 'Internal Server Error',
+                headers: _jsonHeaders,
+              );
+            }
+
+            return ResponseBody.fromString(
+              jsonEncode({
+                'data': {
+                  'active_cryptocurrencies': 10000,
+                  'markets': 1200,
+                  'total_market_cap': {'usd': 3000000000000},
+                  'total_volume': {'usd': 100000000000},
+                  'market_cap_change_percentage_24h_usd': 2.5,
+                },
+              }),
+              200,
+              headers: _jsonHeaders,
+            );
+          },
+        ),
+        maxRetries: 1,
+        retryBaseDelay: Duration.zero,
+      );
+
+      final market = await dataSource.getGlobalMarket();
+
+      expect(requestCount, 2);
+      expect(market.activeCryptocurrencies, 10000);
+    });
+
+    test(
+        'Given CoinGecko returns unauthorized, when request fails, then auth exception is mapped',
+        () async {
       final dataSource = _createDataSource(
         _MockDioAdapter(
           responseFor: (_) => ResponseBody.fromString(
@@ -224,9 +351,19 @@ final _jsonHeaders = {
 CryptoRemoteDataSourceImpl _createDataSource(
   HttpClientAdapter adapter, {
   String apiKey = '',
+  int maxRetries = 0,
+  Duration retryBaseDelay = Duration.zero,
 }) {
   final dio = Dio()..httpClientAdapter = adapter;
-  return CryptoRemoteDataSourceImpl(DioClient(dio: dio, apiKey: apiKey));
+  return CryptoRemoteDataSourceImpl(
+    DioClient(
+      dio: dio,
+      apiKey: apiKey,
+      maxRetries: maxRetries,
+      retryBaseDelay: retryBaseDelay,
+      enableLogging: false,
+    ),
+  );
 }
 
 class _MockDioAdapter implements HttpClientAdapter {

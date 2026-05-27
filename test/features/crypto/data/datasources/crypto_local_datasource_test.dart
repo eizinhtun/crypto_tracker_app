@@ -66,7 +66,8 @@ void main() {
       ]);
     });
 
-    test('caches and reads paged coins', () async {
+    test('Given paged coins, when cached, then typed cache record is stored',
+        () async {
       await dataSource.cacheCoins(
         page: 1,
         coins: const [
@@ -87,7 +88,8 @@ void main() {
       expect(cacheRecord.ttl, const Duration(minutes: 5));
     });
 
-    test('searches cached coins by name or symbol', () async {
+    test('Given cached coins, when searched, then name and symbol are matched',
+        () async {
       await dataSource.cacheCoins(
         page: 1,
         coins: const [
@@ -101,7 +103,8 @@ void main() {
       expect(cachedCoins.map((coin) => coin.id), ['ethereum']);
     });
 
-    test('toggles favorite state using local persistence', () async {
+    test('Given favorite coin id, when toggled, then Hive persistence updates',
+        () async {
       expect(await dataSource.isFavorite('bitcoin'), isFalse);
 
       final firstToggle = await dataSource.toggleFavorite('bitcoin');
@@ -117,7 +120,8 @@ void main() {
       expect(await dataSource.isFavorite('bitcoin'), isFalse);
     });
 
-    test('invalidates expired cached records on read', () async {
+    test('Given expired cache record, when read, then record is invalidated',
+        () async {
       await dataSource.cacheCoins(
         page: 1,
         coins: const [
@@ -133,7 +137,9 @@ void main() {
       expect(coinsBox.get('${StorageKeys.coinsPagePrefix}1'), isNull);
     });
 
-    test('invalidates stale schema cache records on read', () async {
+    test(
+        'Given stale schema cache record, when read, then record is invalidated',
+        () async {
       await coinsBox.put(
         '${StorageKeys.coinsPagePrefix}1',
         CoinsCacheRecord(
@@ -152,7 +158,8 @@ void main() {
       expect(coinsBox.get('${StorageKeys.coinsPagePrefix}1'), isNull);
     });
 
-    test('explicitly invalidates expired cache without clearing fresh records',
+    test(
+        'Given fresh and expired cache records, when cleanup runs, then only expired records are cleared',
         () async {
       await dataSource.cacheCoins(
         page: 1,

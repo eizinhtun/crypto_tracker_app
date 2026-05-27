@@ -38,7 +38,7 @@ class AppTheme {
           color: AppColors.lightTextPrimary,
           fontSize: 34,
           fontWeight: FontWeight.w800,
-          letterSpacing: -1.2,
+          letterSpacing: 0,
         ),
         headlineSmall: TextStyle(
           color: AppColors.lightTextPrimary,
@@ -113,7 +113,7 @@ class AppTheme {
           color: AppColors.darkTextPrimary,
           fontSize: 34,
           fontWeight: FontWeight.w800,
-          letterSpacing: -1.2,
+          letterSpacing: 0,
         ),
         headlineSmall: TextStyle(
           color: AppColors.darkTextPrimary,

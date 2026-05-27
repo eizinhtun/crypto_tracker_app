@@ -2,6 +2,7 @@ import 'package:crypto_tracker_app/features/crypto/presentation/widgets/detail_t
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../viewmodels/coin_detail/coin_detail_event.dart';
 import '../viewmodels/coin_detail/coin_detail_state.dart';
 import '../viewmodels/coin_detail/coin_detail_view_model.dart';
@@ -34,25 +35,14 @@ class _CoinDetailView extends StatelessWidget {
     return BlocBuilder<CoinDetailViewModel, CoinDetailState>(
       builder: (context, state) {
         final detail = state.detail;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final background =
+            isDark ? AppColors.darkBackground : AppColors.lightBackground;
 
         return Scaffold(
-          // appBar: AppBar(
-          //   title: Text(detail?.name ?? 'Coin Detail'),
-          //   actions: [
-          //     if (detail != null)
-          //       FavoriteButton(
-          //         isFavorite: state.isFavorite,
-          //         onPressed: () {
-          //           context
-          //               .read<CoinDetailViewModel>()
-          //               .add(const CoinDetailFavoriteToggled());
-          //         },
-          //       ),
-          //   ],
-          // ),
-
-          backgroundColor: Theme.of(context).colorScheme.surface,
+          backgroundColor: background,
           body: SafeArea(
+            bottom: false,
             child: switch (state.status) {
               CoinDetailStatus.loading => const LoadingView(),
               CoinDetailStatus.failure => ErrorView(

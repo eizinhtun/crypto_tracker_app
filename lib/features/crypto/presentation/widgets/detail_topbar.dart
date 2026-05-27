@@ -1,6 +1,7 @@
 import 'package:crypto_tracker_app/core/theme/app_colors.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/coin_detail.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class DetailTopBar extends StatelessWidget {
   const DetailTopBar({
@@ -27,7 +28,7 @@ class DetailTopBar extends StatelessWidget {
         children: [
           _CircleIconButton(
             icon: Icons.chevron_left,
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => _handleBack(context),
           ),
           Expanded(
             child: Center(
@@ -49,6 +50,22 @@ class DetailTopBar extends StatelessWidget {
       ),
     );
   }
+
+  void _handleBack(BuildContext context) {
+    final router = GoRouter.maybeOf(context);
+    if (router?.canPop() ?? false) {
+      router!.pop();
+      return;
+    }
+
+    final navigator = Navigator.maybeOf(context);
+    if (navigator?.canPop() ?? false) {
+      navigator!.pop();
+      return;
+    }
+
+    router?.go('/');
+  }
 }
 
 class _CircleIconButton extends StatelessWidget {
@@ -67,7 +84,7 @@ class _CircleIconButton extends StatelessWidget {
     return Material(
       color: isDark
           ? AppColors.darkCardSoft
-          : Colors.white.withValues(alpha: 0.75),
+          : AppColors.lightCard.withValues(alpha: 0.75),
       shape: CircleBorder(
         side: BorderSide(
           color: isDark ? AppColors.darkBorder : AppColors.lightBorder,

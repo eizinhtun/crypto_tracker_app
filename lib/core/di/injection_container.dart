@@ -106,3 +106,7 @@ Future<void> configureDependencies() async {
       ),
     );
 }
+
+Future<void> resetDependencies({bool dispose = true}) {
+  return sl.reset(dispose: dispose);
+}

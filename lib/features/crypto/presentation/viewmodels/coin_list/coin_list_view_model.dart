@@ -11,6 +11,11 @@ import '../../../domain/usecases/toggle_favorite_usecase.dart';
 import 'coin_list_event.dart';
 import 'coin_list_state.dart';
 
+/// MVVM ViewModel for the markets list screen.
+///
+/// This class uses `Bloc` for event/state mechanics, but its architectural role
+/// is ViewModel: it receives View events, exposes immutable UI state, invokes
+/// domain use cases, and maps domain results into renderable state.
 class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
   CoinListViewModel({
     required this.getCoinsUseCase,

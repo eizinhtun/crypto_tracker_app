@@ -139,7 +139,7 @@ class _CoinListPageState extends State<CoinListPage> {
                           return CoinListItem(
                             coin: coin,
                             rank: index + 1,
-                            onTap: () => context.go('/coins/${coin.id}'),
+                            onTap: () => context.push('/coins/${coin.id}'),
                             onFavoritePressed: () {
                               _viewModel.add(CoinListFavoriteToggled(coin.id));
                             },
