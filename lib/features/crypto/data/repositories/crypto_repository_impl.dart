@@ -39,8 +39,8 @@ class CryptoRepositoryImpl implements CryptoRepository {
         );
       } on AppException catch (error) {
         return _cachedCoins(page, _failureFromException(error));
-      } on Object catch (error) {
-        return _cachedCoins(page, UnknownFailure(error.toString()));
+      } on Object {
+        return _cachedCoins(page, _unexpectedFailure);
       }
     }
 
@@ -59,8 +59,8 @@ class CryptoRepositoryImpl implements CryptoRepository {
         return Result.success(DataResult.remote(detail.toEntity()));
       } on AppException catch (error) {
         return _cachedCoinDetail(coinId, _failureFromException(error));
-      } on Object catch (error) {
-        return _cachedCoinDetail(coinId, UnknownFailure(error.toString()));
+      } on Object {
+        return _cachedCoinDetail(coinId, _unexpectedFailure);
       }
     }
 
@@ -81,8 +81,8 @@ class CryptoRepositoryImpl implements CryptoRepository {
         );
       } on AppException catch (error) {
         return _cachedTrendingCoins(_failureFromException(error));
-      } on Object catch (error) {
-        return _cachedTrendingCoins(UnknownFailure(error.toString()));
+      } on Object {
+        return _cachedTrendingCoins(_unexpectedFailure);
       }
     }
 
@@ -100,8 +100,8 @@ class CryptoRepositoryImpl implements CryptoRepository {
         return Result.success(DataResult.remote(market.toEntity()));
       } on AppException catch (error) {
         return _cachedGlobalMarket(_failureFromException(error));
-      } on Object catch (error) {
-        return _cachedGlobalMarket(UnknownFailure(error.toString()));
+      } on Object {
+        return _cachedGlobalMarket(_unexpectedFailure);
       }
     }
 
@@ -125,8 +125,8 @@ class CryptoRepositoryImpl implements CryptoRepository {
         );
       } on AppException catch (error) {
         return _cachedSearch(trimmedQuery, _failureFromException(error));
-      } on Object catch (error) {
-        return _cachedSearch(trimmedQuery, UnknownFailure(error.toString()));
+      } on Object {
+        return _cachedSearch(trimmedQuery, _unexpectedFailure);
       }
     }
 
@@ -145,8 +145,8 @@ class CryptoRepositoryImpl implements CryptoRepository {
       );
     } on AppException catch (error) {
       return Result.failure(CacheFailure(error.message));
-    } on Object catch (error) {
-      return Result.failure(UnknownFailure(error.toString()));
+    } on Object {
+      return const Result.failure(_unexpectedFailure);
     }
   }
 
@@ -159,8 +159,8 @@ class CryptoRepositoryImpl implements CryptoRepository {
       );
     } on AppException catch (error) {
       return Result.failure(CacheFailure(error.message));
-    } on Object catch (error) {
-      return Result.failure(UnknownFailure(error.toString()));
+    } on Object {
+      return const Result.failure(_unexpectedFailure);
     }
   }
 
@@ -168,7 +168,10 @@ class CryptoRepositoryImpl implements CryptoRepository {
     int page,
     Failure fallbackFailure,
   ) async {
-    final cachedCoins = await localDataSource.getCachedCoins(page);
+    final cachedCoins = await localDataSource.getCachedCoins(
+      page,
+      allowStale: true,
+    );
     if (cachedCoins.isEmpty) {
       return Result.failure(fallbackFailure);
     }
@@ -182,7 +185,10 @@ class CryptoRepositoryImpl implements CryptoRepository {
     String coinId,
     Failure fallbackFailure,
   ) async {
-    final cachedDetail = await localDataSource.getCachedCoinDetail(coinId);
+    final cachedDetail = await localDataSource.getCachedCoinDetail(
+      coinId,
+      allowStale: true,
+    );
     if (cachedDetail == null) {
       return Result.failure(fallbackFailure);
     }
@@ -193,7 +199,9 @@ class CryptoRepositoryImpl implements CryptoRepository {
   Future<Result<DataResult<List<TrendingCoin>>>> _cachedTrendingCoins(
     Failure fallbackFailure,
   ) async {
-    final cachedCoins = await localDataSource.getCachedTrendingCoins();
+    final cachedCoins = await localDataSource.getCachedTrendingCoins(
+      allowStale: true,
+    );
     if (cachedCoins.isEmpty) {
       return Result.failure(fallbackFailure);
     }
@@ -206,7 +214,9 @@ class CryptoRepositoryImpl implements CryptoRepository {
   Future<Result<DataResult<GlobalMarket>>> _cachedGlobalMarket(
     Failure fallbackFailure,
   ) async {
-    final cachedMarket = await localDataSource.getCachedGlobalMarket();
+    final cachedMarket = await localDataSource.getCachedGlobalMarket(
+      allowStale: true,
+    );
     if (cachedMarket == null) {
       return Result.failure(fallbackFailure);
     }
@@ -218,7 +228,10 @@ class CryptoRepositoryImpl implements CryptoRepository {
     String query,
     Failure fallbackFailure,
   ) async {
-    final cachedCoins = await localDataSource.searchCachedCoins(query);
+    final cachedCoins = await localDataSource.searchCachedCoins(
+      query,
+      allowStale: true,
+    );
     if (cachedCoins.isEmpty) {
       return Result.failure(fallbackFailure);
     }
@@ -252,3 +265,5 @@ class CryptoRepositoryImpl implements CryptoRepository {
     };
   }
 }
+
+const _unexpectedFailure = UnknownFailure('Something went wrong. Try again.');

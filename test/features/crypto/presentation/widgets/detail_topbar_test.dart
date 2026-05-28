@@ -1,3 +1,4 @@
+import 'package:crypto_tracker_app/core/constants/route_names.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/coin_detail.dart';
 import 'package:crypto_tracker_app/features/crypto/presentation/widgets/detail_topbar.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ void main() {
         routes: [
           GoRoute(
             path: '/',
+            name: AppRouteNames.home,
             builder: (_, __) => const Scaffold(body: Text('Markets')),
           ),
           GoRoute(

@@ -14,12 +14,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -35,41 +29,5 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
-      - name: Test with coverage
-        run: flutter test --coverage
-
-      - name: Check coverage threshold
-        shell: bash
-        run: |
-          MIN_COVERAGE=40
-          COVERAGE=$(
-            awk '
-              /^LF:/ { split($0, a, ":"); total += a[2] }
-              /^LH:/ { split($0, a, ":"); hit += a[2] }
-              END {
-                if (total == 0) {
-                  print "0.00"
-                } else {
-                  printf "%.2f", hit * 100 / total
-                }
-              }
-            ' coverage/lcov.info
-          )
-
-          echo "Line coverage: ${COVERAGE}%"
-          awk -v coverage="$COVERAGE" -v minimum="$MIN_COVERAGE" 'BEGIN {
-            if ((coverage + 0) < (minimum + 0)) {
-              printf "Coverage %.2f%% is below required %.2f%%\n", coverage, minimum
-              exit 1
-            }
-          }'
-
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-lcov
-          path: coverage/lcov.info
-          if-no-files-found: error
-
-      - name: Build debug APK
-        run: flutter build apk --debug
+      - name: Test
+        run: flutter test

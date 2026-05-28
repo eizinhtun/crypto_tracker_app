@@ -138,6 +138,27 @@ void main() {
     });
 
     test(
+        'Given expired cache record, when stale cache is allowed, then cached coins are returned',
+        () async {
+      await dataSource.cacheCoins(
+        page: 1,
+        coins: const [
+          CoinModel(id: 'bitcoin', symbol: 'btc', name: 'Bitcoin'),
+        ],
+      );
+
+      now = now.add(const Duration(minutes: 6));
+
+      final cachedCoins = await dataSource.getCachedCoins(
+        1,
+        allowStale: true,
+      );
+
+      expect(cachedCoins.single.id, 'bitcoin');
+      expect(coinsBox.get('${StorageKeys.coinsPagePrefix}1'), isNotNull);
+    });
+
+    test(
         'Given stale schema cache record, when read, then record is invalidated',
         () async {
       await coinsBox.put(

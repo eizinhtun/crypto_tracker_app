@@ -237,7 +237,10 @@ class _FakeLocalDataSource implements CryptoLocalDataSource {
   }
 
   @override
-  Future<List<CoinModel>> getCachedCoins(int page) async {
+  Future<List<CoinModel>> getCachedCoins(
+    int page, {
+    bool allowStale = false,
+  }) async {
     return cachedCoinPages[page] ?? const [];
   }
 
@@ -279,22 +282,32 @@ class _FakeLocalDataSource implements CryptoLocalDataSource {
   }
 
   @override
-  Future<CoinDetailModel?> getCachedCoinDetail(String coinId) {
+  Future<CoinDetailModel?> getCachedCoinDetail(
+    String coinId, {
+    bool allowStale = false,
+  }) {
     throw UnimplementedError();
   }
 
   @override
-  Future<GlobalMarketModel?> getCachedGlobalMarket() {
+  Future<GlobalMarketModel?> getCachedGlobalMarket({
+    bool allowStale = false,
+  }) {
     throw UnimplementedError();
   }
 
   @override
-  Future<List<TrendingCoinModel>> getCachedTrendingCoins() {
+  Future<List<TrendingCoinModel>> getCachedTrendingCoins({
+    bool allowStale = false,
+  }) {
     throw UnimplementedError();
   }
 
   @override
-  Future<List<CoinModel>> searchCachedCoins(String query) {
+  Future<List<CoinModel>> searchCachedCoins(
+    String query, {
+    bool allowStale = false,
+  }) {
     throw UnimplementedError();
   }
 }

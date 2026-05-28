@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/constants/route_names.dart';
 import '../core/di/injection_container.dart';
 import '../features/crypto/presentation/pages/coin_detail_page.dart';
 import '../features/crypto/presentation/pages/coin_list_page.dart';
@@ -13,7 +14,7 @@ final appRouter = GoRouter(
   routes: [
     GoRoute(
       path: '/',
-      name: 'coinList',
+      name: AppRouteNames.home,
       builder: (context, state) {
         return BlocProvider(
           create: (_) => sl<CoinListViewModel>()..add(const CoinListStarted()),
@@ -23,7 +24,7 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/coins/:id',
-      name: 'coinDetail',
+      name: AppRouteNames.coinDetail,
       builder: (context, state) {
         final coinId = state.pathParameters['id'] ?? '';
 

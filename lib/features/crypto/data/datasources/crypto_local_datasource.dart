@@ -15,21 +15,34 @@ abstract class CryptoLocalDataSource {
     required List<CoinModel> coins,
   });
 
-  Future<List<CoinModel>> getCachedCoins(int page);
+  Future<List<CoinModel>> getCachedCoins(
+    int page, {
+    bool allowStale = false,
+  });
 
-  Future<List<CoinModel>> searchCachedCoins(String query);
+  Future<List<CoinModel>> searchCachedCoins(
+    String query, {
+    bool allowStale = false,
+  });
 
   Future<void> cacheCoinDetail(CoinDetailModel coin);
 
-  Future<CoinDetailModel?> getCachedCoinDetail(String coinId);
+  Future<CoinDetailModel?> getCachedCoinDetail(
+    String coinId, {
+    bool allowStale = false,
+  });
 
   Future<void> cacheTrendingCoins(List<TrendingCoinModel> coins);
 
-  Future<List<TrendingCoinModel>> getCachedTrendingCoins();
+  Future<List<TrendingCoinModel>> getCachedTrendingCoins({
+    bool allowStale = false,
+  });
 
   Future<void> cacheGlobalMarket(GlobalMarketModel market);
 
-  Future<GlobalMarketModel?> getCachedGlobalMarket();
+  Future<GlobalMarketModel?> getCachedGlobalMarket({
+    bool allowStale = false,
+  });
 
   Future<bool> toggleFavorite(String coinId);
 
@@ -81,10 +94,14 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
   }
 
   @override
-  Future<List<CoinModel>> getCachedCoins(int page) async {
+  Future<List<CoinModel>> getCachedCoins(
+    int page, {
+    bool allowStale = false,
+  }) async {
     final record = await _getFreshRecord(
       coinsBox,
       '${StorageKeys.coinsPagePrefix}$page',
+      allowStale: allowStale,
     );
 
     if (record == null) {
@@ -95,12 +112,19 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
   }
 
   @override
-  Future<List<CoinModel>> searchCachedCoins(String query) async {
+  Future<List<CoinModel>> searchCachedCoins(
+    String query, {
+    bool allowStale = false,
+  }) async {
     final normalizedQuery = query.trim().toLowerCase();
     final coins = <CoinModel>[];
 
     for (final key in coinsBox.keys.toList()) {
-      final record = await _getFreshRecord(coinsBox, key);
+      final record = await _getFreshRecord(
+        coinsBox,
+        key,
+        allowStale: allowStale,
+      );
       if (record == null) {
         continue;
       }
@@ -131,10 +155,14 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
   }
 
   @override
-  Future<CoinDetailModel?> getCachedCoinDetail(String coinId) async {
+  Future<CoinDetailModel?> getCachedCoinDetail(
+    String coinId, {
+    bool allowStale = false,
+  }) async {
     final record = await _getFreshRecord(
       coinDetailsBox,
       '${StorageKeys.coinDetailPrefix}$coinId',
+      allowStale: allowStale,
     );
     if (record == null) {
       return null;
@@ -157,9 +185,14 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
   }
 
   @override
-  Future<List<TrendingCoinModel>> getCachedTrendingCoins() async {
-    final record =
-        await _getFreshRecord(trendingBox, StorageKeys.trendingCoins);
+  Future<List<TrendingCoinModel>> getCachedTrendingCoins({
+    bool allowStale = false,
+  }) async {
+    final record = await _getFreshRecord(
+      trendingBox,
+      StorageKeys.trendingCoins,
+      allowStale: allowStale,
+    );
     if (record == null) {
       return const [];
     }
@@ -180,10 +213,13 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
   }
 
   @override
-  Future<GlobalMarketModel?> getCachedGlobalMarket() async {
+  Future<GlobalMarketModel?> getCachedGlobalMarket({
+    bool allowStale = false,
+  }) async {
     final record = await _getFreshRecord(
       globalMarketBox,
       StorageKeys.globalMarket,
+      allowStale: allowStale,
     );
     if (record == null) {
       return null;
@@ -234,14 +270,20 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
 
   Future<T?> _getFreshRecord<T extends CryptoCacheRecord>(
     Box<T> box,
-    Object key,
-  ) async {
+    Object key, {
+    bool allowStale = false,
+  }) async {
     final record = box.get(key);
     if (record == null) {
       return null;
     }
 
-    if (!record.isCurrentSchema || record.isExpired(_now)) {
+    if (!record.isCurrentSchema) {
+      await box.delete(key);
+      return null;
+    }
+
+    if (!allowStale && record.isExpired(_now)) {
       await box.delete(key);
       return null;
     }

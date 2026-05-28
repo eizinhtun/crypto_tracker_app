@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../domain/entities/global_market.dart';
@@ -15,6 +16,7 @@ class GlobalMarketCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = _MarketColors.from(context);
+    final l10n = context.l10n;
     final change = market.marketCapChangePercentage24hUsd;
     final changeColor = change >= 0 ? AppColors.positive : AppColors.negative;
 
@@ -40,7 +42,7 @@ class GlobalMarketCard extends StatelessWidget {
           Expanded(
             flex: 7,
             child: _MarketMetric(
-              label: 'TOP 20  ·  24H',
+              label: l10n.globalMarketCap,
               value: CurrencyFormatter.compactUsd(market.totalMarketCapUsd),
               trailing: Text(
                 CurrencyFormatter.percentage(change),
@@ -63,7 +65,7 @@ class GlobalMarketCard extends StatelessWidget {
           Expanded(
             flex: 5,
             child: _MarketMetric(
-              label: 'VOL 24H',
+              label: l10n.volume24hShort,
               value: CurrencyFormatter.compactUsd(market.totalVolumeUsd),
             ),
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class CoinSearchBar extends StatefulWidget {
@@ -49,6 +50,7 @@ class _CoinSearchBarState extends State<CoinSearchBar> {
         isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
     final mutedColor =
         isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final l10n = context.l10n;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 4, 24, 14),
@@ -62,7 +64,7 @@ class _CoinSearchBarState extends State<CoinSearchBar> {
                 fontWeight: FontWeight.w700,
               ),
           decoration: InputDecoration(
-            hintText: 'Search coins',
+            hintText: l10n.searchHint,
             hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: mutedColor,
                   fontWeight: FontWeight.w700,
@@ -76,7 +78,7 @@ class _CoinSearchBarState extends State<CoinSearchBar> {
                 }
 
                 return IconButton(
-                  tooltip: 'Clear search',
+                  tooltip: l10n.clearSearch,
                   onPressed: () {
                     _controller.clear();
                     widget.onChanged('');

@@ -103,6 +103,8 @@ can also be overridden for different CoinGecko environments.
 
 - API-key header injection;
 - common JSON accept headers;
+- limited GET retry/backoff for 429, transient 5xx, timeout, and connection
+  failures;
 - HTTP/Dio error mapping.
 
 HTTP failures are mapped at the network boundary into typed application
@@ -132,7 +134,8 @@ provenance travels with the data.
 3. Successful remote responses are cached through the local data source.
 4. If the remote request fails, the repository falls back to cached data.
 5. If offline, the repository reads cached data directly.
-6. If no cached data exists, the repository returns a `CacheFailure`.
+6. If no cached data exists, the repository returns the original mapped
+   failure, such as `NetworkFailure`, `RateLimitFailure`, or `ServerFailure`.
 
 This applies to:
 
@@ -200,10 +203,10 @@ Cache TTLs are defined in `AppConstants`:
 - coin detail: 1 hour.
 
 The local data source invalidates expired records and stale schema-version
-records automatically when they are read. It also exposes
-`invalidateExpiredCache()` for explicit cache cleanup. Startup migration deletes
-legacy raw values and old cache schemas before reopening boxes with typed Hive
-box APIs.
+records automatically during normal cache reads. Offline/failure fallback reads
+explicitly allow stale cache so a stored successful response can still be shown
+when CoinGecko is unreachable. Startup migration deletes legacy raw values and
+old cache schemas before reopening boxes with typed Hive box APIs.
 
 Favorites are local-first. Toggling a favorite does not require network access,
 and list/detail ViewModels merge favorite status into the renderable state.
@@ -214,7 +217,7 @@ and list/detail ViewModels merge favorite status into the renderable state.
 - Domain: entities, repository contracts, and use cases.
 - Data: DTOs, remote/local data sources, and repository implementations.
 - Core: shared infrastructure such as networking, database initialization,
-  error/result types, dependency injection, theme, and utilities.
+  error/result types, dependency injection, theme, localization, and utilities.
 
 ## Architecture Tests
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/trending_coin.dart';
 
@@ -18,6 +19,7 @@ class TrendingCoinSection extends StatelessWidget {
     }
 
     final colors = _TrendingColors.from(context);
+    final l10n = context.l10n;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,7 +35,7 @@ class TrendingCoinSection extends StatelessWidget {
               ),
               const SizedBox(width: 5),
               Text(
-                'TRENDING  ·  24H',
+                l10n.trending24h,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: colors.muted,
                       letterSpacing: 2.0,
@@ -43,7 +45,7 @@ class TrendingCoinSection extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                '${coins.length} COINS →',
+                l10n.coinCount(coins.length),
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: colors.muted,
                       letterSpacing: 1.4,

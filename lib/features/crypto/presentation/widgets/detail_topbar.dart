@@ -1,4 +1,6 @@
 import 'package:crypto_tracker_app/core/theme/app_colors.dart';
+import 'package:crypto_tracker_app/core/constants/route_names.dart';
+import 'package:crypto_tracker_app/core/localization/app_localizations.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/coin_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -19,6 +21,7 @@ class DetailTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final rank = detail.marketCapRank;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = context.l10n;
     final secondaryText =
         isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
 
@@ -28,12 +31,13 @@ class DetailTopBar extends StatelessWidget {
         children: [
           _CircleIconButton(
             icon: Icons.chevron_left,
+            tooltip: l10n.back,
             onPressed: () => _handleBack(context),
           ),
           Expanded(
             child: Center(
               child: Text(
-                '${detail.symbol.toUpperCase()}  ·  ${rank == null ? 'RANK -' : 'RANK #$rank'}',
+                '${detail.symbol.toUpperCase()}  ·  ${l10n.rankLabel(rank)}',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.2,
@@ -44,6 +48,7 @@ class DetailTopBar extends StatelessWidget {
           ),
           _CircleIconButton(
             icon: isFavorite ? Icons.star : Icons.star_border,
+            tooltip: isFavorite ? l10n.removeFavorite : l10n.addFavorite,
             onPressed: onFavoritePressed,
           ),
         ],
@@ -52,55 +57,54 @@ class DetailTopBar extends StatelessWidget {
   }
 
   void _handleBack(BuildContext context) {
-    final router = GoRouter.maybeOf(context);
-    if (router?.canPop() ?? false) {
-      router!.pop();
+    if (context.canPop()) {
+      context.pop();
       return;
     }
 
-    final navigator = Navigator.maybeOf(context);
-    if (navigator?.canPop() ?? false) {
-      navigator!.pop();
-      return;
-    }
-
-    router?.go('/');
+    context.goNamed(AppRouteNames.home);
   }
 }
 
 class _CircleIconButton extends StatelessWidget {
   const _CircleIconButton({
     required this.icon,
+    required this.tooltip,
     required this.onPressed,
   });
 
   final IconData icon;
+  final String tooltip;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Material(
-      color: isDark
-          ? AppColors.darkCardSoft
-          : AppColors.lightCard.withValues(alpha: 0.75),
-      shape: CircleBorder(
-        side: BorderSide(
-          color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: isDark
+            ? AppColors.darkCardSoft
+            : AppColors.lightCard.withValues(alpha: 0.75),
+        shape: CircleBorder(
+          side: BorderSide(
+            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+          ),
         ),
-      ),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onPressed,
-        child: SizedBox(
-          width: 40,
-          height: 40,
-          child: Icon(
-            icon,
-            size: 22,
-            color:
-                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onPressed,
+          child: SizedBox(
+            width: 40,
+            height: 40,
+            child: Icon(
+              icon,
+              size: 22,
+              color: isDark
+                  ? AppColors.darkTextPrimary
+                  : AppColors.lightTextPrimary,
+            ),
           ),
         ),
       ),

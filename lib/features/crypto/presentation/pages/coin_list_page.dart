@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/route_names.dart';
+import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/localization/locale_cubit.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../viewmodels/coin_list/coin_list_view_model.dart';
 import '../viewmodels/coin_list/coin_list_event.dart';
@@ -74,7 +77,7 @@ class _CoinListPageState extends State<CoinListPage> {
 
           if (state.status == CoinListStatus.failure && state.coins.isEmpty) {
             return ErrorView(
-              message: state.errorMessage ?? 'Unable to load coins',
+              message: state.errorMessage ?? context.l10n.unableToLoadCoins,
               onRetry: () => _viewModel.add(const CoinListStarted()),
             );
           }
@@ -107,9 +110,9 @@ class _CoinListPageState extends State<CoinListPage> {
                   ),
                   const SliverToBoxAdapter(child: _CoinTableHeader()),
                   if (state.coins.isEmpty)
-                    const SliverFillRemaining(
+                    SliverFillRemaining(
                       hasScrollBody: false,
-                      child: EmptyView(message: 'No coins found'),
+                      child: EmptyView(message: context.l10n.emptyCoins),
                     )
                   else
                     SliverList(
@@ -139,7 +142,18 @@ class _CoinListPageState extends State<CoinListPage> {
                           return CoinListItem(
                             coin: coin,
                             rank: index + 1,
-                            onTap: () => context.push('/coins/${coin.id}'),
+                            onTap: () async {
+                              await context.pushNamed(
+                                AppRouteNames.coinDetail,
+                                pathParameters: {'id': coin.id},
+                              );
+                              if (!mounted) {
+                                return;
+                              }
+                              _viewModel.add(
+                                const CoinListRefreshRequested(),
+                              );
+                            },
                             onFavoritePressed: () {
                               _viewModel.add(CoinListFavoriteToggled(coin.id));
                             },
@@ -168,6 +182,7 @@ class _MarketsHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = _MarketsPageColors.from(context);
+    final l10n = context.l10n;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
@@ -179,7 +194,7 @@ class _MarketsHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '•  LIVE / COINGECKO',
+                  '•  ${l10n.liveCoinGecko}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -191,7 +206,7 @@ class _MarketsHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Markets',
+                  l10n.markets,
                   maxLines: 1,
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
                         color: colors.primaryText,
@@ -205,18 +220,30 @@ class _MarketsHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
+          Tooltip(
+            message: l10n.switchLanguage,
+            child: Material(
               color: colors.card,
-              shape: BoxShape.circle,
-              border: Border.all(color: colors.border),
-            ),
-            child: Icon(
-              Icons.more_horiz,
-              color: colors.primaryText,
-              size: 21,
+              shape: CircleBorder(
+                side: BorderSide(color: colors.border),
+              ),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () {
+                  context.read<LocaleCubit>().toggle(
+                        Localizations.localeOf(context),
+                      );
+                },
+                child: SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Icon(
+                    Icons.language,
+                    color: colors.primaryText,
+                    size: 21,
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -231,6 +258,7 @@ class _CoinTableHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = _MarketsPageColors.from(context);
+    final l10n = context.l10n;
     final labelStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
           color: colors.muted,
           fontSize: 10,
@@ -253,9 +281,9 @@ class _CoinTableHeader extends StatelessWidget {
             child: Text('#', style: labelStyle),
           ),
           Expanded(
-            child: Text('ASSET', style: labelStyle),
+            child: Text(l10n.asset, style: labelStyle),
           ),
-          Text('PRICE  ·  24H', style: labelStyle),
+          Text(l10n.price24h, style: labelStyle),
         ],
       ),
     );

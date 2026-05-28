@@ -2,6 +2,7 @@ import 'package:crypto_tracker_app/features/crypto/presentation/widgets/detail_t
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../viewmodels/coin_detail/coin_detail_event.dart';
 import '../viewmodels/coin_detail/coin_detail_state.dart';
@@ -46,7 +47,8 @@ class _CoinDetailView extends StatelessWidget {
             child: switch (state.status) {
               CoinDetailStatus.loading => const LoadingView(),
               CoinDetailStatus.failure => ErrorView(
-                  message: state.errorMessage ?? 'Unable to load coin detail',
+                  message:
+                      state.errorMessage ?? context.l10n.unableToLoadCoinDetail,
                   onRetry: () {
                     context
                         .read<CoinDetailViewModel>()
@@ -55,7 +57,14 @@ class _CoinDetailView extends StatelessWidget {
                 ),
               CoinDetailStatus.initial => const LoadingView(),
               CoinDetailStatus.success => detail == null
-                  ? const ErrorView(message: 'Coin detail is unavailable')
+                  ? ErrorView(
+                      message: context.l10n.coinDetailUnavailable,
+                      onRetry: () {
+                        context
+                            .read<CoinDetailViewModel>()
+                            .add(CoinDetailRequested(coinId));
+                      },
+                    )
                   : Column(
                       children: [
                         DetailTopBar(

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/app_localizations.dart';
+
 class OfflineBanner extends StatelessWidget {
   const OfflineBanner({super.key});
 
@@ -20,7 +22,7 @@ class OfflineBanner extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Offline mode. Showing cached data when available.',
+              context.l10n.offline,
               style: TextStyle(color: colorScheme.onErrorContainer),
             ),
           ),

@@ -1,4 +1,5 @@
 import 'package:crypto_tracker_app/core/theme/app_colors.dart';
+import 'package:crypto_tracker_app/core/localization/app_localizations.dart';
 import 'package:crypto_tracker_app/core/utils/currency_formatter.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/coin_detail.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +20,7 @@ class DetailContent extends StatelessWidget {
     final isPositive = change >= 0;
     final changeColor = isPositive ? AppColors.positive : AppColors.negative;
     final colors = _DetailColors.from(context);
+    final l10n = context.l10n;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
@@ -34,12 +36,13 @@ class DetailContent extends StatelessWidget {
                 price: CurrencyFormatter.marketPrice(detail.currentPrice),
                 percentage: CurrencyFormatter.percentage(change),
                 percentageColor: changeColor,
+                changeLabel: l10n.hours24,
               ),
             ),
           ],
         ),
         const SizedBox(height: 30),
-        const _SectionTitle('MARKET STATS'),
+        _SectionTitle(l10n.marketStats),
         const SizedBox(height: 12),
         GridView(
           shrinkWrap: true,
@@ -52,49 +55,47 @@ class DetailContent extends StatelessWidget {
           ),
           children: [
             _StatCard(
-              label: 'MARKET CAP',
+              label: l10n.marketCap,
               value: CurrencyFormatter.compactUsd(detail.marketCap),
             ),
             _StatCard(
-              label: 'VOLUME 24H',
+              label: l10n.volume24h,
               value: CurrencyFormatter.compactUsd(detail.totalVolume),
             ),
             _StatCard(
-              label: 'ALL-TIME HIGH',
+              label: l10n.allTimeHigh,
               value: CurrencyFormatter.marketPrice(detail.allTimeHigh),
               subValue: CurrencyFormatter.percentage(
                   detail.allTimeHighChangePercentage),
               subValueColor: AppColors.negative,
             ),
             _StatCard(
-              label: 'ALL-TIME LOW',
+              label: l10n.allTimeLow,
               value: CurrencyFormatter.marketPrice(detail.allTimeLow),
               subValue: CurrencyFormatter.percentage(
                   detail.allTimeLowChangePercentage),
               subValueColor: AppColors.positive,
             ),
             _StatCard(
-              label: 'CIRCULATING SUPPLY',
+              label: l10n.circulatingSupply,
               value: _formatSupply(
                 detail.circulatingSupply,
                 detail.symbol,
               ),
             ),
             _StatCard(
-              label: 'MAX SUPPLY',
+              label: l10n.maxSupply,
               value: detail.maxSupply == null
-                  ? '∞ uncapped'
+                  ? l10n.uncappedSupply
                   : _formatSupply(detail.maxSupply, detail.symbol),
             ),
           ],
         ),
         const SizedBox(height: 28),
-        _SectionTitle('ABOUT ${detail.name.toUpperCase()}'),
+        _SectionTitle(l10n.aboutCoin(detail.name)),
         const SizedBox(height: 12),
         Text(
-          descriptionText.isNotEmpty
-              ? descriptionText
-              : 'No description available for this coin.',
+          descriptionText.isNotEmpty ? descriptionText : l10n.noDescription,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 height: 1.45,
                 fontWeight: FontWeight.w500,
@@ -104,7 +105,7 @@ class DetailContent extends StatelessWidget {
         if ((detail.homepage ?? '').isNotEmpty) ...[
           const SizedBox(height: 20),
           Text(
-            '○  SOURCE  ·  ${_sourceHost(detail.homepage!)}',
+            l10n.sourceHost(_sourceHost(detail.homepage!)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -175,12 +176,14 @@ class _PriceHeader extends StatelessWidget {
     required this.price,
     required this.percentage,
     required this.percentageColor,
+    required this.changeLabel,
   });
 
   final String name;
   final String price;
   final String percentage;
   final Color percentageColor;
+  final String changeLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -228,7 +231,7 @@ class _PriceHeader extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              '24h',
+              changeLabel,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: colors.secondaryText,
                     fontWeight: FontWeight.w700,

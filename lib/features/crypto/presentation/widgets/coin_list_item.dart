@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../domain/entities/coin.dart';
@@ -23,6 +24,7 @@ class CoinListItem extends StatelessWidget {
     final colors = _CoinRowColors.from(context);
     final priceChange = coin.priceChangePercentage24h;
     final isPositive = (priceChange ?? 0) >= 0;
+    final l10n = context.l10n;
     final priceChangeColor =
         isPositive ? AppColors.positive : AppColors.negative;
 
@@ -63,7 +65,8 @@ class CoinListItem extends StatelessWidget {
                 width: 38,
                 height: 38,
                 child: IconButton(
-                  tooltip: coin.isFavorite ? 'Remove favorite' : 'Add favorite',
+                  tooltip:
+                      coin.isFavorite ? l10n.removeFavorite : l10n.addFavorite,
                   onPressed: onFavoritePressed,
                   padding: EdgeInsets.zero,
                   iconSize: 18,
