@@ -118,6 +118,9 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
       switch (overviewResult) {
         case Success(value: final overviewResult):
           final overview = overviewResult.data;
+          final warningCategory = overview.warningCategories.isEmpty
+              ? null
+              : overview.warningCategories.first;
           emit(
             state.copyWith(
               status: CoinListStatus.success,
@@ -130,7 +133,8 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
               isOffline: overviewResult.isFromCache,
               lastUpdated: overviewResult.lastUpdated,
               clearFailure: true,
-              clearTransientFailure: true,
+              transientFailureCategory: warningCategory,
+              clearTransientFailure: warningCategory == null,
               clearLastUpdated: !overviewResult.isFromCache,
             ),
           );
@@ -172,7 +176,12 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
     }
 
     final nextPage = state.page + 1;
-    emit(state.copyWith(status: CoinListStatus.loadingMore));
+    emit(
+      state.copyWith(
+        status: CoinListStatus.loadingMore,
+        clearTransientFailure: true,
+      ),
+    );
 
     try {
       final result = await getCoinsUseCase(page: nextPage);
@@ -197,10 +206,22 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
             ),
           );
         case Error<DataResult<List<Coin>>>(failure: final failure):
+          if (state.coins.isNotEmpty) {
+            emit(
+              state.copyWith(
+                status: CoinListStatus.success,
+                transientFailureCategory: failure.category,
+                clearFailure: true,
+              ),
+            );
+            return;
+          }
+
           emit(
             state.copyWith(
               status: CoinListStatus.failure,
               failureCategory: failure.category,
+              clearTransientFailure: true,
             ),
           );
       }

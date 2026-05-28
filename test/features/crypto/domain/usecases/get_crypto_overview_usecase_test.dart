@@ -57,6 +57,13 @@ void main() {
         overview.warnings,
         ['Trending unavailable', 'Market unavailable'],
       );
+      expect(
+        overview.warningCategories,
+        [
+          FailureCategory.cacheUnavailable,
+          FailureCategory.cacheUnavailable,
+        ],
+      );
     });
 
     test('preserves cache source metadata from required coin data', () async {

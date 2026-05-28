@@ -1,3 +1,37 @@
+# name: Flutter CI
+
+# on:
+#   push:
+#     branches: [main]
+#   pull_request:
+#     branches: [main]
+
+# jobs:
+#   analyze-and-test:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+
+#       - name: Setup Flutter
+#         uses: subosito/flutter-action@v2
+#         with:
+#           channel: stable
+#           cache: true
+
+#       - name: Install dependencies
+#         run: flutter pub get
+
+#       - name: Check formatting
+#         run: dart format --set-exit-if-changed .
+
+#       - name: Analyze
+#         run: flutter analyze
+
+#       - name: Test
+#         run: flutter test
+
 name: Flutter CI
 
 on:
@@ -6,28 +40,53 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: flutter-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  analyze-and-test:
+  analyze-test-build:
+    name: Analyze, Test, and Build
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.44.0'
           channel: stable
           cache: true
+
+      - name: Show Flutter version
+        run: flutter --version
 
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Check formatting
-        run: dart format --set-exit-if-changed .
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
 
-      - name: Analyze
-        run: flutter analyze
+      - name: Analyze project
+        run: flutter analyze --fatal-infos --fatal-warnings
 
-      - name: Test
-        run: flutter test
+      - name: Run tests with coverage
+        run: flutter test --coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/lcov.info
+          if-no-files-found: ignore
+
+      - name: Build Android APK
+        run: flutter build apk --debug

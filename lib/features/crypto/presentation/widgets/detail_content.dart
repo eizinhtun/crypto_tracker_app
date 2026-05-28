@@ -161,11 +161,15 @@ class _PriceHeader extends StatelessWidget {
       children: [
         Text(
           name.toUpperCase(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: AppTextStyles.topMeta(colors.secondaryText),
         ),
         const SizedBox(height: 4),
         Text(
           price,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: AppTextStyles.heroPrice(colors.primaryText),
         ),
         const SizedBox(height: 6),
@@ -179,13 +183,19 @@ class _PriceHeader extends StatelessWidget {
               ),
               child: Text(
                 '${isNegative ? '▼' : '▲'} $percentage',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.percentageBadge(percentageColor),
               ),
             ),
             const SizedBox(width: 8),
-            Text(
-              changeLabel,
-              style: AppTextStyles.coinMeta(colors.secondaryText),
+            Flexible(
+              child: Text(
+                changeLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.coinMeta(colors.secondaryText),
+              ),
             ),
           ],
         ),

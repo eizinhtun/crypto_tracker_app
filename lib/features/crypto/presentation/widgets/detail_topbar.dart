@@ -39,6 +39,8 @@ class DetailTopBar extends StatelessWidget {
             child: Center(
               child: Text(
                 '${detail.symbol.toUpperCase()}  ·  ${l10n.rankLabel(rank)}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.topMeta(secondaryText),
               ),
             ),
@@ -93,8 +95,8 @@ class _CircleIconButton extends StatelessWidget {
           customBorder: const CircleBorder(),
           onTap: onPressed,
           child: SizedBox(
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             child: Icon(
               icon,
               size: 22,

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/error/failures.dart';
 import 'coin.dart';
 import 'global_market.dart';
 import 'trending_coin.dart';
@@ -12,6 +13,7 @@ class CryptoOverview extends Equatable {
     required this.perPage,
     this.globalMarket,
     this.warnings = const [],
+    this.warningCategories = const [],
   });
 
   final List<Coin> coins;
@@ -20,6 +22,7 @@ class CryptoOverview extends Equatable {
   final int page;
   final int perPage;
   final List<String> warnings;
+  final List<FailureCategory> warningCategories;
 
   bool get hasReachedMax => coins.length < perPage;
 
@@ -31,5 +34,6 @@ class CryptoOverview extends Equatable {
         page,
         perPage,
         warnings,
+        warningCategories,
       ];
 }

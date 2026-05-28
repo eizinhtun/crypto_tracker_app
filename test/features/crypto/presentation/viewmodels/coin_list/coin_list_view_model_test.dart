@@ -71,6 +71,43 @@ void main() {
     );
 
     blocTest<CoinListViewModel, CoinListState>(
+      'Given optional overview data fails, when started, then success includes non-blocking warning',
+      build: () {
+        when(
+          () => repository.getCoins(
+            page: AppConstants.firstPage,
+            perPage: AppConstants.defaultPageSize,
+          ),
+        ).thenAnswer(
+          (_) async => const Result.success(DataResult.remote(_coins)),
+        );
+        when(() => repository.getTrendingCoins()).thenAnswer(
+          (_) async => const Result.failure(
+            ServerFailure('Unable to load data. Please try again.'),
+          ),
+        );
+        when(() => repository.getGlobalMarket()).thenAnswer(
+          (_) async => const Result.success(DataResult.remote(_globalMarket)),
+        );
+        return _createViewModel(repository);
+      },
+      act: (viewModel) => viewModel.add(const CoinListStarted()),
+      expect: () => [
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.loading),
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.success)
+            .having((state) => state.coins, 'coins', _coins)
+            .having((state) => state.trendingCoins, 'trendingCoins', isEmpty)
+            .having(
+              (state) => state.transientFailureCategory,
+              'transientFailureCategory',
+              FailureCategory.server,
+            ),
+      ],
+    );
+
+    blocTest<CoinListViewModel, CoinListState>(
       'Given refresh fails with existing data, when refreshed, then existing data remains with non-blocking failure',
       build: () {
         when(
@@ -439,6 +476,57 @@ void main() {
           ),
         );
       },
+    );
+
+    blocTest<CoinListViewModel, CoinListState>(
+      'Given next page fails with existing data, when loading more, then data remains with non-blocking failure',
+      build: () {
+        when(
+          () => repository.getCoins(
+            page: 2,
+            perPage: AppConstants.defaultPageSize,
+          ),
+        ).thenAnswer(
+          (_) async => const Result.failure(
+            RateLimitFailure('Too many requests. Please wait and try again.'),
+          ),
+        );
+        return _createViewModel(repository);
+      },
+      seed: () => CoinListState.initial().copyWith(
+        status: CoinListStatus.success,
+        coins: _coins,
+        page: 1,
+        hasReachedMax: false,
+        transientFailureCategory: FailureCategory.server,
+      ),
+      act: (viewModel) => viewModel.add(const CoinListNextPageRequested()),
+      expect: () => [
+        isA<CoinListState>()
+            .having(
+              (state) => state.status,
+              'status',
+              CoinListStatus.loadingMore,
+            )
+            .having(
+              (state) => state.transientFailureCategory,
+              'transientFailureCategory',
+              isNull,
+            ),
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.success)
+            .having((state) => state.coins, 'coins', _coins)
+            .having(
+              (state) => state.failureCategory,
+              'failureCategory',
+              isNull,
+            )
+            .having(
+              (state) => state.transientFailureCategory,
+              'transientFailureCategory',
+              FailureCategory.rateLimit,
+            ),
+      ],
     );
 
     blocTest<CoinListViewModel, CoinListState>(

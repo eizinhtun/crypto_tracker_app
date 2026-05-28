@@ -60,6 +60,12 @@ class GetCryptoOverviewUseCase {
                 if (marketResult case Error(failure: final failure))
                   failure.message,
               ],
+              warningCategories: [
+                if (trendingResult case Error(failure: final failure))
+                  failure.category,
+                if (marketResult case Error(failure: final failure))
+                  failure.category,
+              ],
             ),
             source: isFromCache ? ResultSource.cache : ResultSource.remote,
             lastUpdated: isFromCache ? lastUpdated : null,

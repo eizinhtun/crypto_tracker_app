@@ -64,14 +64,14 @@ class CoinListItem extends StatelessWidget {
                 child: _CoinIdentity(coin: coin, colors: colors),
               ),
               SizedBox(
-                width: 38,
-                height: 38,
+                width: 44,
+                height: 44,
                 child: IconButton(
                   tooltip:
                       coin.isFavorite ? l10n.removeFavorite : l10n.addFavorite,
                   onPressed: onFavoritePressed,
                   padding: EdgeInsets.zero,
-                  iconSize: 18,
+                  iconSize: 20,
                   color: coin.isFavorite ? AppColors.positive : colors.muted,
                   icon: Icon(
                     coin.isFavorite
