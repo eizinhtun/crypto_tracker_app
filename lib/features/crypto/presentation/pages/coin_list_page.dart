@@ -77,7 +77,10 @@ class _CoinListPageState extends State<CoinListPage> {
 
           if (state.status == CoinListStatus.failure && state.coins.isEmpty) {
             return ErrorView(
-              message: state.errorMessage ?? context.l10n.unableToLoadCoins,
+              message: context.l10n.failureMessage(
+                state.failureCategory,
+                fallback: context.l10n.unableToLoadCoins,
+              ),
               onRetry: () => _viewModel.add(const CoinListStarted()),
             );
           }
@@ -91,7 +94,9 @@ class _CoinListPageState extends State<CoinListPage> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
                   if (state.isOffline)
-                    const SliverToBoxAdapter(child: OfflineBanner()),
+                    SliverToBoxAdapter(
+                      child: OfflineBanner(lastUpdated: state.lastUpdated),
+                    ),
                   const SliverToBoxAdapter(child: _MarketsHeader()),
                   if (state.globalMarket != null)
                     SliverToBoxAdapter(
@@ -112,7 +117,11 @@ class _CoinListPageState extends State<CoinListPage> {
                   if (state.coins.isEmpty)
                     SliverFillRemaining(
                       hasScrollBody: false,
-                      child: EmptyView(message: context.l10n.emptyCoins),
+                      child: EmptyView(
+                        message: state.isOffline && state.query.isNotEmpty
+                            ? context.l10n.emptyCachedCoins
+                            : context.l10n.emptyCoins,
+                      ),
                     )
                   else
                     SliverList(

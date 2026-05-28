@@ -4,8 +4,17 @@ abstract final class LocalizationKeys {
   static const favorites = 'favorites';
   static const retry = 'retry';
   static const emptyCoins = 'emptyCoins';
+  static const emptyCachedCoins = 'emptyCachedCoins';
   static const offline = 'offline';
+  static const offlineWithLastUpdated = 'offlineWithLastUpdated';
   static const noData = 'noData';
+  static const unableToLoadData = 'unableToLoadData';
+  static const rateLimited = 'rateLimited';
+  static const noInternetConnection = 'noInternetConnection';
+  static const cachedDataUnavailable = 'cachedDataUnavailable';
+  static const somethingWentWrong = 'somethingWentWrong';
+  static const requestTimedOut = 'requestTimedOut';
+  static const requestedDataNotFound = 'requestedDataNotFound';
   static const markets = 'markets';
   static const liveCoinGecko = 'liveCoinGecko';
   static const asset = 'asset';

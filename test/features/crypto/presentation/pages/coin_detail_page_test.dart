@@ -39,7 +39,10 @@ void main() {
       viewModel.add(const CoinDetailRequested('bitcoin'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Unable to load detail'), findsOneWidget);
+      expect(
+        find.text('Unable to load data. Please try again.'),
+        findsOneWidget,
+      );
       expect(find.text('Retry'), findsOneWidget);
 
       await tester.tap(find.text('Retry'));

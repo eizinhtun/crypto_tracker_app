@@ -9,14 +9,34 @@ import '../models/coin_model.dart';
 import '../models/global_market_model.dart';
 import '../models/trending_coin_model.dart';
 
+class CachedData<T> {
+  const CachedData({
+    required this.data,
+    required this.cachedAt,
+  });
+
+  final T data;
+  final DateTime cachedAt;
+}
+
 abstract class CryptoLocalDataSource {
   Future<void> cacheCoins({
     required int page,
     required List<CoinModel> coins,
   });
 
+  Future<CachedData<List<CoinModel>>?> getCachedCoinsWithMetadata(
+    int page, {
+    bool allowStale = false,
+  });
+
   Future<List<CoinModel>> getCachedCoins(
     int page, {
+    bool allowStale = false,
+  });
+
+  Future<CachedData<List<CoinModel>>?> searchCachedCoinsWithMetadata(
+    String query, {
     bool allowStale = false,
   });
 
@@ -27,6 +47,11 @@ abstract class CryptoLocalDataSource {
 
   Future<void> cacheCoinDetail(CoinDetailModel coin);
 
+  Future<CachedData<CoinDetailModel>?> getCachedCoinDetailWithMetadata(
+    String coinId, {
+    bool allowStale = false,
+  });
+
   Future<CoinDetailModel?> getCachedCoinDetail(
     String coinId, {
     bool allowStale = false,
@@ -34,11 +59,20 @@ abstract class CryptoLocalDataSource {
 
   Future<void> cacheTrendingCoins(List<TrendingCoinModel> coins);
 
+  Future<CachedData<List<TrendingCoinModel>>?>
+      getCachedTrendingCoinsWithMetadata({
+    bool allowStale = false,
+  });
+
   Future<List<TrendingCoinModel>> getCachedTrendingCoins({
     bool allowStale = false,
   });
 
   Future<void> cacheGlobalMarket(GlobalMarketModel market);
+
+  Future<CachedData<GlobalMarketModel>?> getCachedGlobalMarketWithMetadata({
+    bool allowStale = false,
+  });
 
   Future<GlobalMarketModel?> getCachedGlobalMarket({
     bool allowStale = false,
@@ -95,7 +129,7 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
   }
 
   @override
-  Future<List<CoinModel>> getCachedCoins(
+  Future<CachedData<List<CoinModel>>?> getCachedCoinsWithMetadata(
     int page, {
     bool allowStale = false,
   }) async {
@@ -106,19 +140,35 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
     );
 
     if (record == null) {
-      return const [];
+      return null;
     }
 
-    return record.coins.map((coin) => coin.toModel()).toList(growable: false);
+    return CachedData(
+      data: record.coins.map((coin) => coin.toModel()).toList(growable: false),
+      cachedAt: record.cachedAt,
+    );
   }
 
   @override
-  Future<List<CoinModel>> searchCachedCoins(
+  Future<List<CoinModel>> getCachedCoins(
+    int page, {
+    bool allowStale = false,
+  }) async {
+    final cachedData = await getCachedCoinsWithMetadata(
+      page,
+      allowStale: allowStale,
+    );
+    return cachedData?.data ?? const [];
+  }
+
+  @override
+  Future<CachedData<List<CoinModel>>?> searchCachedCoinsWithMetadata(
     String query, {
     bool allowStale = false,
   }) async {
     final normalizedQuery = query.trim().toLowerCase();
     final coins = <CoinModel>[];
+    DateTime? latestCachedAt;
 
     for (final key in coinsBox.keys.toList()) {
       final record = await _getFreshRecord(
@@ -130,17 +180,37 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
         continue;
       }
 
+      latestCachedAt = _latest(latestCachedAt, record.cachedAt);
       coins.addAll(record.coins.map((coin) => coin.toModel()));
+    }
+
+    if (latestCachedAt == null) {
+      return null;
     }
 
     final byId = <String, CoinModel>{
       for (final coin in coins) coin.id: coin,
     };
 
-    return byId.values.where((coin) {
-      return coin.name.toLowerCase().contains(normalizedQuery) ||
-          coin.symbol.toLowerCase().contains(normalizedQuery);
-    }).toList();
+    return CachedData(
+      data: byId.values.where((coin) {
+        return coin.name.toLowerCase().contains(normalizedQuery) ||
+            coin.symbol.toLowerCase().contains(normalizedQuery);
+      }).toList(growable: false),
+      cachedAt: latestCachedAt,
+    );
+  }
+
+  @override
+  Future<List<CoinModel>> searchCachedCoins(
+    String query, {
+    bool allowStale = false,
+  }) async {
+    final cachedData = await searchCachedCoinsWithMetadata(
+      query,
+      allowStale: allowStale,
+    );
+    return cachedData?.data ?? const [];
   }
 
   @override
@@ -156,7 +226,7 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
   }
 
   @override
-  Future<CoinDetailModel?> getCachedCoinDetail(
+  Future<CachedData<CoinDetailModel>?> getCachedCoinDetailWithMetadata(
     String coinId, {
     bool allowStale = false,
   }) async {
@@ -169,7 +239,22 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
       return null;
     }
 
-    return record.detail.toModel();
+    return CachedData(
+      data: record.detail.toModel(),
+      cachedAt: record.cachedAt,
+    );
+  }
+
+  @override
+  Future<CoinDetailModel?> getCachedCoinDetail(
+    String coinId, {
+    bool allowStale = false,
+  }) async {
+    final cachedData = await getCachedCoinDetailWithMetadata(
+      coinId,
+      allowStale: allowStale,
+    );
+    return cachedData?.data;
   }
 
   @override
@@ -186,7 +271,8 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
   }
 
   @override
-  Future<List<TrendingCoinModel>> getCachedTrendingCoins({
+  Future<CachedData<List<TrendingCoinModel>>?>
+      getCachedTrendingCoinsWithMetadata({
     bool allowStale = false,
   }) async {
     final record = await _getFreshRecord(
@@ -195,10 +281,23 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
       allowStale: allowStale,
     );
     if (record == null) {
-      return const [];
+      return null;
     }
 
-    return record.coins.map((coin) => coin.toModel()).toList(growable: false);
+    return CachedData(
+      data: record.coins.map((coin) => coin.toModel()).toList(growable: false),
+      cachedAt: record.cachedAt,
+    );
+  }
+
+  @override
+  Future<List<TrendingCoinModel>> getCachedTrendingCoins({
+    bool allowStale = false,
+  }) async {
+    final cachedData = await getCachedTrendingCoinsWithMetadata(
+      allowStale: allowStale,
+    );
+    return cachedData?.data ?? const [];
   }
 
   @override
@@ -214,7 +313,7 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
   }
 
   @override
-  Future<GlobalMarketModel?> getCachedGlobalMarket({
+  Future<CachedData<GlobalMarketModel>?> getCachedGlobalMarketWithMetadata({
     bool allowStale = false,
   }) async {
     final record = await _getFreshRecord(
@@ -226,7 +325,20 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
       return null;
     }
 
-    return record.market.toModel();
+    return CachedData(
+      data: record.market.toModel(),
+      cachedAt: record.cachedAt,
+    );
+  }
+
+  @override
+  Future<GlobalMarketModel?> getCachedGlobalMarket({
+    bool allowStale = false,
+  }) async {
+    final cachedData = await getCachedGlobalMarketWithMetadata(
+      allowStale: allowStale,
+    );
+    return cachedData?.data;
   }
 
   @override
@@ -311,5 +423,13 @@ class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
 
   DateTime get _now {
     return (now?.call() ?? DateTime.now()).toUtc();
+  }
+
+  DateTime _latest(DateTime? current, DateTime candidate) {
+    if (current == null || candidate.isAfter(current)) {
+      return candidate;
+    }
+
+    return current;
   }
 }

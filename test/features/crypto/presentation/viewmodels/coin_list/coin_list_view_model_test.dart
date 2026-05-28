@@ -1,5 +1,6 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:crypto_tracker_app/core/constants/app_constants.dart';
+import 'package:crypto_tracker_app/core/error/failures.dart';
 import 'package:crypto_tracker_app/core/error/result.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/coin.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/global_market.dart';
@@ -62,7 +63,45 @@ void main() {
         isA<CoinListState>()
             .having((state) => state.status, 'status', CoinListStatus.success)
             .having((state) => state.coins.first.id, 'first coin id', 'bitcoin')
-            .having((state) => state.isOffline, 'isOffline', isTrue),
+            .having((state) => state.isOffline, 'isOffline', isTrue)
+            .having((state) => state.lastUpdated, 'lastUpdated', _cachedAt),
+      ],
+    );
+
+    blocTest<CoinListViewModel, CoinListState>(
+      'Given repository failure has raw text, when started, then state stores only failure category',
+      build: () {
+        when(
+          () => repository.getCoins(
+            page: AppConstants.firstPage,
+            perPage: AppConstants.defaultPageSize,
+          ),
+        ).thenAnswer(
+          (_) async => const Result.failure(
+            ServerFailure(
+              'DioException [bad response]: https://api.coingecko.com',
+            ),
+          ),
+        );
+        when(() => repository.getTrendingCoins()).thenAnswer(
+          (_) async => const Result.success(DataResult.remote([])),
+        );
+        when(() => repository.getGlobalMarket()).thenAnswer(
+          (_) async => const Result.success(DataResult.remote(_globalMarket)),
+        );
+        return _createViewModel(repository);
+      },
+      act: (viewModel) => viewModel.add(const CoinListStarted()),
+      expect: () => [
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.loading),
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.failure)
+            .having(
+              (state) => state.failureCategory,
+              'failureCategory',
+              FailureCategory.server,
+            ),
       ],
     );
 
@@ -224,6 +263,7 @@ void _stubOverview(
       DataResult(
         _coins,
         source: source,
+        lastUpdated: source == ResultSource.cache ? _cachedAt : null,
       ),
     ),
   );
@@ -232,6 +272,7 @@ void _stubOverview(
       DataResult(
         _trendingCoins,
         source: source,
+        lastUpdated: source == ResultSource.cache ? _cachedAt : null,
       ),
     ),
   );
@@ -240,10 +281,13 @@ void _stubOverview(
       DataResult(
         _globalMarket,
         source: source,
+        lastUpdated: source == ResultSource.cache ? _cachedAt : null,
       ),
     ),
   );
 }
+
+final _cachedAt = DateTime.utc(2026, 1, 1, 12);
 
 const _coins = [
   Coin(id: 'bitcoin', symbol: 'btc', name: 'Bitcoin'),

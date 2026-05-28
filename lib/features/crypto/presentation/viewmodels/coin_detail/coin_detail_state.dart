@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../../core/error/failures.dart';
 import '../../../domain/entities/coin_detail.dart';
 
 enum CoinDetailStatus {
@@ -16,7 +17,8 @@ class CoinDetailState extends Equatable {
     required this.isOffline,
     this.detail,
     this.descriptionText = '',
-    this.errorMessage,
+    this.failureCategory,
+    this.lastUpdated,
   });
 
   factory CoinDetailState.initial() {
@@ -32,7 +34,8 @@ class CoinDetailState extends Equatable {
   final String descriptionText;
   final bool isFavorite;
   final bool isOffline;
-  final String? errorMessage;
+  final FailureCategory? failureCategory;
+  final DateTime? lastUpdated;
 
   CoinDetailState copyWith({
     CoinDetailStatus? status,
@@ -40,8 +43,10 @@ class CoinDetailState extends Equatable {
     String? descriptionText,
     bool? isFavorite,
     bool? isOffline,
-    String? errorMessage,
-    bool clearError = false,
+    FailureCategory? failureCategory,
+    DateTime? lastUpdated,
+    bool clearFailure = false,
+    bool clearLastUpdated = false,
   }) {
     return CoinDetailState(
       status: status ?? this.status,
@@ -49,7 +54,9 @@ class CoinDetailState extends Equatable {
       descriptionText: descriptionText ?? this.descriptionText,
       isFavorite: isFavorite ?? this.isFavorite,
       isOffline: isOffline ?? this.isOffline,
-      errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
+      failureCategory:
+          clearFailure ? null : failureCategory ?? this.failureCategory,
+      lastUpdated: clearLastUpdated ? null : lastUpdated ?? this.lastUpdated,
     );
   }
 
@@ -60,6 +67,7 @@ class CoinDetailState extends Equatable {
         descriptionText,
         isFavorite,
         isOffline,
-        errorMessage,
+        failureCategory,
+        lastUpdated,
       ];
 }

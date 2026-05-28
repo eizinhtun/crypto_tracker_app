@@ -59,6 +59,7 @@ void main() {
       switch (result) {
         case Success(value: final coinsResult):
           expect(coinsResult.source, ResultSource.cache);
+          expect(coinsResult.lastUpdated, local.cachedAt);
           final coins = coinsResult.data;
           expect(coins.single.id, 'ethereum');
         case Error(failure: final failure):
@@ -256,6 +257,7 @@ class _FakeRemoteDataSource implements CryptoRemoteDataSource {
 
 class _FakeLocalDataSource implements CryptoLocalDataSource {
   final cachedCoinPages = <int, List<CoinModel>>{};
+  final cachedAt = DateTime.utc(2026, 1, 1, 12);
   Set<String> favoriteIds = {};
 
   @override
@@ -264,6 +266,19 @@ class _FakeLocalDataSource implements CryptoLocalDataSource {
     required List<CoinModel> coins,
   }) async {
     cachedCoinPages[page] = coins;
+  }
+
+  @override
+  Future<CachedData<List<CoinModel>>?> getCachedCoinsWithMetadata(
+    int page, {
+    bool allowStale = false,
+  }) async {
+    final coins = cachedCoinPages[page];
+    if (coins == null) {
+      return null;
+    }
+
+    return CachedData(data: coins, cachedAt: cachedAt);
   }
 
   @override
@@ -302,6 +317,14 @@ class _FakeLocalDataSource implements CryptoLocalDataSource {
   }
 
   @override
+  Future<CachedData<CoinDetailModel>?> getCachedCoinDetailWithMetadata(
+    String coinId, {
+    bool allowStale = false,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<void> cacheGlobalMarket(GlobalMarketModel market) {
     throw UnimplementedError();
   }
@@ -327,6 +350,13 @@ class _FakeLocalDataSource implements CryptoLocalDataSource {
   }
 
   @override
+  Future<CachedData<GlobalMarketModel>?> getCachedGlobalMarketWithMetadata({
+    bool allowStale = false,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<List<TrendingCoinModel>> getCachedTrendingCoins({
     bool allowStale = false,
   }) {
@@ -334,7 +364,23 @@ class _FakeLocalDataSource implements CryptoLocalDataSource {
   }
 
   @override
+  Future<CachedData<List<TrendingCoinModel>>?>
+      getCachedTrendingCoinsWithMetadata({
+    bool allowStale = false,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<List<CoinModel>> searchCachedCoins(
+    String query, {
+    bool allowStale = false,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<CachedData<List<CoinModel>>?> searchCachedCoinsWithMetadata(
     String query, {
     bool allowStale = false,
   }) {

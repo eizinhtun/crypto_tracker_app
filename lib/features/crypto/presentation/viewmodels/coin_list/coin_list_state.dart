@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../../core/error/failures.dart';
 import '../../../domain/entities/coin.dart';
 import '../../../domain/entities/global_market.dart';
 import '../../../domain/entities/trending_coin.dart';
@@ -23,7 +24,8 @@ class CoinListState extends Equatable {
     required this.query,
     required this.isOffline,
     this.globalMarket,
-    this.errorMessage,
+    this.failureCategory,
+    this.lastUpdated,
   });
 
   factory CoinListState.initial() {
@@ -46,7 +48,8 @@ class CoinListState extends Equatable {
   final bool hasReachedMax;
   final String query;
   final bool isOffline;
-  final String? errorMessage;
+  final FailureCategory? failureCategory;
+  final DateTime? lastUpdated;
 
   CoinListState copyWith({
     CoinListStatus? status,
@@ -57,8 +60,10 @@ class CoinListState extends Equatable {
     bool? hasReachedMax,
     String? query,
     bool? isOffline,
-    String? errorMessage,
-    bool clearError = false,
+    FailureCategory? failureCategory,
+    DateTime? lastUpdated,
+    bool clearFailure = false,
+    bool clearLastUpdated = false,
   }) {
     return CoinListState(
       status: status ?? this.status,
@@ -69,7 +74,9 @@ class CoinListState extends Equatable {
       hasReachedMax: hasReachedMax ?? this.hasReachedMax,
       query: query ?? this.query,
       isOffline: isOffline ?? this.isOffline,
-      errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
+      failureCategory:
+          clearFailure ? null : failureCategory ?? this.failureCategory,
+      lastUpdated: clearLastUpdated ? null : lastUpdated ?? this.lastUpdated,
     );
   }
 
@@ -83,6 +90,7 @@ class CoinListState extends Equatable {
         hasReachedMax,
         query,
         isOffline,
-        errorMessage,
+        failureCategory,
+        lastUpdated,
       ];
 }

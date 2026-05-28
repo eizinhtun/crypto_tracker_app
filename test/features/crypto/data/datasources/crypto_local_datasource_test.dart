@@ -76,10 +76,12 @@ void main() {
       );
 
       final cachedCoins = await dataSource.getCachedCoins(1);
+      final cachedData = await dataSource.getCachedCoinsWithMetadata(1);
       final record = coinsBox.get('${StorageKeys.coinsPagePrefix}1');
 
       expect(cachedCoins, hasLength(1));
       expect(cachedCoins.single.id, 'bitcoin');
+      expect(cachedData?.cachedAt, now);
       expect(record, isNotNull);
       final cacheRecord = record!;
       expect(cacheRecord.schemaVersion, CryptoCacheRecord.currentSchemaVersion);
@@ -99,8 +101,11 @@ void main() {
       );
 
       final cachedCoins = await dataSource.searchCachedCoins('eth');
+      final cachedData = await dataSource.searchCachedCoinsWithMetadata('doge');
 
       expect(cachedCoins.map((coin) => coin.id), ['ethereum']);
+      expect(cachedData?.data, isEmpty);
+      expect(cachedData?.cachedAt, now);
     });
 
     test('Given favorite coin id, when toggled, then Hive persistence updates',

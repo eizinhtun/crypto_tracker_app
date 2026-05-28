@@ -62,7 +62,8 @@ void main() {
         isA<CoinDetailState>()
             .having((state) => state.status, 'status', CoinDetailStatus.success)
             .having((state) => state.isOffline, 'isOffline', isTrue)
-            .having((state) => state.isFavorite, 'isFavorite', isTrue),
+            .having((state) => state.isFavorite, 'isFavorite', isTrue)
+            .having((state) => state.lastUpdated, 'lastUpdated', _cachedAt),
       ],
     );
 
@@ -118,10 +119,13 @@ void _stubDetail(
           description: '<p>Bitcoin &amp; <strong>Ethereum</strong></p>',
         ),
         source: source,
+        lastUpdated: source == ResultSource.cache ? _cachedAt : null,
       ),
     ),
   );
 }
+
+final _cachedAt = DateTime.utc(2026, 1, 1, 12);
 
 void _stubFavorite(
   _MockCryptoRepository repository, {

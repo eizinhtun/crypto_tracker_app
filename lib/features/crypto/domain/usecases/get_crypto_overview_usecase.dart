@@ -40,6 +40,11 @@ class GetCryptoOverviewUseCase {
         final isFromCache = coinsDataResult.isFromCache ||
             (trendingDataResult?.isFromCache ?? false) ||
             (marketDataResult?.isFromCache ?? false);
+        final lastUpdated = _latestDate([
+          coinsDataResult.lastUpdated,
+          trendingDataResult?.lastUpdated,
+          marketDataResult?.lastUpdated,
+        ]);
 
         return Result.success(
           DataResult(
@@ -57,10 +62,23 @@ class GetCryptoOverviewUseCase {
               ],
             ),
             source: isFromCache ? ResultSource.cache : ResultSource.remote,
+            lastUpdated: isFromCache ? lastUpdated : null,
           ),
         );
       case Error(failure: final failure):
         return Result.failure(failure);
     }
+  }
+
+  DateTime? _latestDate(Iterable<DateTime?> dates) {
+    DateTime? latest;
+
+    for (final date in dates.whereType<DateTime>()) {
+      if (latest == null || date.isAfter(latest)) {
+        latest = date;
+      }
+    }
+
+    return latest;
   }
 }

@@ -45,7 +45,14 @@ class CoinDetailViewModel extends Bloc<CoinDetailEvent, CoinDetailState> {
 
     _coinId = coinId;
     _isLoadingDetail = true;
-    emit(state.copyWith(status: CoinDetailStatus.loading, clearError: true));
+    emit(
+      state.copyWith(
+        status: CoinDetailStatus.loading,
+        isOffline: false,
+        clearFailure: true,
+        clearLastUpdated: true,
+      ),
+    );
 
     try {
       final detailResult = await getCoinDetailUseCase(coinId);
@@ -65,7 +72,9 @@ class CoinDetailViewModel extends Bloc<CoinDetailEvent, CoinDetailState> {
               descriptionText: HtmlTextFormatter.plainText(detail.description),
               isFavorite: isFavorite,
               isOffline: detailResult.isFromCache,
-              clearError: true,
+              lastUpdated: detailResult.lastUpdated,
+              clearFailure: true,
+              clearLastUpdated: !detailResult.isFromCache,
             ),
           );
         case Error(failure: final failure):
@@ -73,7 +82,7 @@ class CoinDetailViewModel extends Bloc<CoinDetailEvent, CoinDetailState> {
             state.copyWith(
               status: CoinDetailStatus.failure,
               isFavorite: isFavorite,
-              errorMessage: failure.message,
+              failureCategory: failure.category,
             ),
           );
       }
@@ -101,9 +110,9 @@ class CoinDetailViewModel extends Bloc<CoinDetailEvent, CoinDetailState> {
 
       switch (result) {
         case Success<bool>(value: final isFavorite):
-          emit(state.copyWith(isFavorite: isFavorite, clearError: true));
+          emit(state.copyWith(isFavorite: isFavorite, clearFailure: true));
         case Error<bool>(failure: final failure):
-          emit(state.copyWith(errorMessage: failure.message));
+          emit(state.copyWith(failureCategory: failure.category));
       }
     } finally {
       _isTogglingFavorite = false;

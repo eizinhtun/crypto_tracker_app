@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import '../error/failures.dart';
 import 'localization_keys.dart';
 
 class AppLocalizations {
@@ -34,8 +35,24 @@ class AppLocalizations {
   String get favorites => _text(LocalizationKeys.favorites);
   String get retry => _text(LocalizationKeys.retry);
   String get emptyCoins => _text(LocalizationKeys.emptyCoins);
+  String get emptyCachedCoins => _text(LocalizationKeys.emptyCachedCoins);
   String get offline => _text(LocalizationKeys.offline);
+  String cachedDataLastUpdated(DateTime lastUpdated) {
+    return _text(LocalizationKeys.offlineWithLastUpdated)
+        .replaceAll('{time}', _time(lastUpdated.toLocal()));
+  }
+
   String get noData => _text(LocalizationKeys.noData);
+  String get unableToLoadData => _text(LocalizationKeys.unableToLoadData);
+  String get rateLimited => _text(LocalizationKeys.rateLimited);
+  String get noInternetConnection =>
+      _text(LocalizationKeys.noInternetConnection);
+  String get cachedDataUnavailable =>
+      _text(LocalizationKeys.cachedDataUnavailable);
+  String get somethingWentWrong => _text(LocalizationKeys.somethingWentWrong);
+  String get requestTimedOut => _text(LocalizationKeys.requestTimedOut);
+  String get requestedDataNotFound =>
+      _text(LocalizationKeys.requestedDataNotFound);
   String get markets => _text(LocalizationKeys.markets);
   String get liveCoinGecko => _text(LocalizationKeys.liveCoinGecko);
   String get asset => _text(LocalizationKeys.asset);
@@ -90,11 +107,36 @@ class AppLocalizations {
         .replaceAll('{rank}', rank.toString());
   }
 
+  String failureMessage(
+    FailureCategory? category, {
+    String? fallback,
+  }) {
+    return switch (category) {
+      FailureCategory.network => noInternetConnection,
+      FailureCategory.server => unableToLoadData,
+      FailureCategory.rateLimit => rateLimited,
+      FailureCategory.notFound => requestedDataNotFound,
+      FailureCategory.unauthorized => unableToLoadData,
+      FailureCategory.timeout => requestTimedOut,
+      FailureCategory.cacheUnavailable => cachedDataUnavailable,
+      FailureCategory.unknown => somethingWentWrong,
+      null => fallback ?? somethingWentWrong,
+    };
+  }
+
   String _text(String key) {
     final languageCode = locale.languageCode;
     return _localizedValues[languageCode]?[key] ??
         _localizedValues[fallbackLocale.languageCode]?[key] ??
         key;
+  }
+
+  String _time(DateTime dateTime) {
+    return '${_twoDigits(dateTime.hour)}:${_twoDigits(dateTime.minute)}';
+  }
+
+  String _twoDigits(int value) {
+    return value.toString().padLeft(2, '0');
   }
 }
 
@@ -132,8 +174,21 @@ const _localizedValues = <String, Map<String, String>>{
     LocalizationKeys.favorites: 'Favorites',
     LocalizationKeys.retry: 'Retry',
     LocalizationKeys.emptyCoins: 'No coins found',
+    LocalizationKeys.emptyCachedCoins: 'No cached results found',
     LocalizationKeys.offline: 'Offline mode. Showing cached data.',
+    LocalizationKeys.offlineWithLastUpdated:
+        'Showing cached data · Last updated: {time}',
     LocalizationKeys.noData: 'No data available',
+    LocalizationKeys.unableToLoadData: 'Unable to load data. Please try again.',
+    LocalizationKeys.rateLimited:
+        'Too many requests. Please wait and try again.',
+    LocalizationKeys.noInternetConnection:
+        'No internet connection. Showing cached data if available.',
+    LocalizationKeys.cachedDataUnavailable: 'Cached data is unavailable.',
+    LocalizationKeys.somethingWentWrong:
+        'Something went wrong. Please try again.',
+    LocalizationKeys.requestTimedOut: 'Request timed out. Please try again.',
+    LocalizationKeys.requestedDataNotFound: 'Requested data was not found.',
     LocalizationKeys.markets: 'Markets',
     LocalizationKeys.liveCoinGecko: 'LIVE / COINGECKO',
     LocalizationKeys.asset: 'ASSET',
@@ -173,9 +228,26 @@ const _localizedValues = <String, Map<String, String>>{
     LocalizationKeys.favorites: 'နှစ်သက်ရာများ',
     LocalizationKeys.retry: 'ထပ်မံကြိုးစားမည်',
     LocalizationKeys.emptyCoins: 'ဒင်္ဂါး မတွေ့ပါ',
+    LocalizationKeys.emptyCachedCoins: 'သိမ်းထားသော ရလဒ် မတွေ့ပါ',
     LocalizationKeys.offline:
         'အော့ဖ်လိုင်းမုဒ်။ သိမ်းထားသော အချက်အလက်များကို ပြနေသည်။',
+    LocalizationKeys.offlineWithLastUpdated:
+        'သိမ်းထားသော အချက်အလက်များကို ပြနေသည် · နောက်ဆုံးအပ်ဒိတ်: {time}',
     LocalizationKeys.noData: 'အချက်အလက် မရှိသေးပါ',
+    LocalizationKeys.unableToLoadData:
+        'အချက်အလက် မရယူနိုင်ပါ။ ထပ်မံကြိုးစားပါ။',
+    LocalizationKeys.rateLimited:
+        'တောင်းဆိုမှုများလွန်းနေသည်။ ခဏစောင့်ပြီး ထပ်မံကြိုးစားပါ။',
+    LocalizationKeys.noInternetConnection:
+        'အင်တာနက်ချိတ်ဆက်မှု မရှိပါ။ ရှိပါက သိမ်းထားသော အချက်အလက်များကို ပြပါမည်။',
+    LocalizationKeys.cachedDataUnavailable:
+        'သိမ်းထားသော အချက်အလက် မရှိသေးပါ။',
+    LocalizationKeys.somethingWentWrong:
+        'တစ်ခုခု မှားယွင်းသွားသည်။ ထပ်မံကြိုးစားပါ။',
+    LocalizationKeys.requestTimedOut:
+        'တောင်းဆိုမှု အချိန်ကျော်သွားသည်။ ထပ်မံကြိုးစားပါ။',
+    LocalizationKeys.requestedDataNotFound:
+        'တောင်းဆိုထားသော အချက်အလက် မတွေ့ပါ။',
     LocalizationKeys.markets: 'စျေးကွက်များ',
     LocalizationKeys.liveCoinGecko: 'LIVE / COINGECKO',
     LocalizationKeys.asset: 'ပိုင်ဆိုင်မှု',

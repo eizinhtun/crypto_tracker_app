@@ -3,11 +3,20 @@ import 'package:flutter/material.dart';
 import '../../../../core/localization/app_localizations.dart';
 
 class OfflineBanner extends StatelessWidget {
-  const OfflineBanner({super.key});
+  const OfflineBanner({
+    this.lastUpdated,
+    super.key,
+  });
+
+  final DateTime? lastUpdated;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final message = switch (lastUpdated) {
+      final updatedAt? => context.l10n.cachedDataLastUpdated(updatedAt),
+      null => context.l10n.offline,
+    };
 
     return Container(
       width: double.infinity,
@@ -22,7 +31,7 @@ class OfflineBanner extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              context.l10n.offline,
+              message,
               style: TextStyle(color: colorScheme.onErrorContainer),
             ),
           ),

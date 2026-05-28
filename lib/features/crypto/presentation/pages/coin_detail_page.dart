@@ -46,12 +46,14 @@ class _CoinDetailView extends StatelessWidget {
             bottom: false,
             child: switch (state.status) {
               CoinDetailStatus.loading => const LoadingView(),
-              CoinDetailStatus.failure => ErrorView(
-                  message:
-                      state.errorMessage ?? context.l10n.unableToLoadCoinDetail,
-                  onRetry: () {
-                    context
-                        .read<CoinDetailViewModel>()
+	              CoinDetailStatus.failure => ErrorView(
+	                  message: context.l10n.failureMessage(
+	                    state.failureCategory,
+	                    fallback: context.l10n.unableToLoadCoinDetail,
+	                  ),
+	                  onRetry: () {
+	                    context
+	                        .read<CoinDetailViewModel>()
                         .add(CoinDetailRequested(coinId));
                   },
                 ),
@@ -75,8 +77,9 @@ class _CoinDetailView extends StatelessWidget {
                                 .read<CoinDetailViewModel>()
                                 .add(const CoinDetailFavoriteToggled());
                           },
-                        ),
-                        if (state.isOffline) const OfflineBanner(),
+	                        ),
+	                        if (state.isOffline)
+	                          OfflineBanner(lastUpdated: state.lastUpdated),
                         Expanded(
                           child: DetailContent(
                             detail: detail,

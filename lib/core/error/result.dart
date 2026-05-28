@@ -10,14 +10,19 @@ class DataResult<T> {
   const DataResult(
     this.data, {
     this.source = ResultSource.remote,
+    this.lastUpdated,
   });
 
   const DataResult.remote(T data) : this(data);
 
-  const DataResult.cache(T data)
+  const DataResult.cache(
+    T data, {
+    DateTime? lastUpdated,
+  })
       : this(
           data,
           source: ResultSource.cache,
+          lastUpdated: lastUpdated,
         );
 
   const DataResult.local(T data)
@@ -28,6 +33,7 @@ class DataResult<T> {
 
   final T data;
   final ResultSource source;
+  final DateTime? lastUpdated;
 
   bool get isFromCache => source == ResultSource.cache;
   bool get isLocal => source == ResultSource.local;

@@ -99,11 +99,13 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
     _isFirstPageLoading = true;
     emit(
       state.copyWith(
-        status: isRefresh ? CoinListStatus.refreshing : CoinListStatus.loading,
-        query: '',
-        clearError: true,
-      ),
-    );
+          status: isRefresh ? CoinListStatus.refreshing : CoinListStatus.loading,
+          query: '',
+          isOffline: false,
+          clearFailure: true,
+          clearLastUpdated: true,
+        ),
+      );
 
     try {
       final overviewResult = await getCryptoOverviewUseCase();
@@ -120,7 +122,9 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
               page: overview.page,
               hasReachedMax: overview.hasReachedMax,
               isOffline: overviewResult.isFromCache,
-              clearError: true,
+              lastUpdated: overviewResult.lastUpdated,
+              clearFailure: true,
+              clearLastUpdated: !overviewResult.isFromCache,
             ),
           );
         case Error(failure: final failure):
@@ -128,7 +132,7 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
             state.copyWith(
               status: CoinListStatus.failure,
               isOffline: true,
-              errorMessage: failure.message,
+              failureCategory: failure.category,
             ),
           );
       }
@@ -164,14 +168,16 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
               page: nextPage,
               hasReachedMax: coins.length < AppConstants.defaultPageSize,
               isOffline: coinsResult.isFromCache,
-              clearError: true,
+              lastUpdated: coinsResult.lastUpdated,
+              clearFailure: true,
+              clearLastUpdated: !coinsResult.isFromCache,
             ),
           );
         case Error<DataResult<List<Coin>>>(failure: final failure):
           emit(
             state.copyWith(
               status: CoinListStatus.failure,
-              errorMessage: failure.message,
+              failureCategory: failure.category,
             ),
           );
       }
@@ -210,7 +216,9 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
         query: query,
         coins: const [],
         hasReachedMax: true,
-        clearError: true,
+        isOffline: false,
+        clearFailure: true,
+        clearLastUpdated: true,
       ),
     );
 
@@ -225,14 +233,16 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
             coins: coins,
             hasReachedMax: true,
             isOffline: coinsResult.isFromCache,
-            clearError: true,
+            lastUpdated: coinsResult.lastUpdated,
+            clearFailure: true,
+            clearLastUpdated: !coinsResult.isFromCache,
           ),
         );
       case Error<DataResult<List<Coin>>>(failure: final failure):
         emit(
           state.copyWith(
             status: CoinListStatus.failure,
-            errorMessage: failure.message,
+            failureCategory: failure.category,
           ),
         );
     }
@@ -253,7 +263,7 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
         case Success<bool>(value: final isFavorite):
           emit(_favoriteUpdatedState(event.coinId, isFavorite));
         case Error<bool>(failure: final failure):
-          emit(state.copyWith(errorMessage: failure.message));
+          emit(state.copyWith(failureCategory: failure.category));
       }
     } finally {
       _favoriteToggleIds.remove(event.coinId);
@@ -274,7 +284,7 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
       case Success<bool>(value: final isFavorite):
         emit(_favoriteUpdatedState(event.coinId, isFavorite));
       case Error<bool>(failure: final failure):
-        emit(state.copyWith(errorMessage: failure.message));
+        emit(state.copyWith(failureCategory: failure.category));
     }
   }
 
@@ -287,7 +297,7 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
 
         return coin.copyWith(isFavorite: isFavorite);
       }).toList(),
-      clearError: true,
+      clearFailure: true,
     );
   }
 }

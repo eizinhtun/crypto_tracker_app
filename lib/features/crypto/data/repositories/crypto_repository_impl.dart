@@ -168,16 +168,19 @@ class CryptoRepositoryImpl implements CryptoRepository {
     int page,
     Failure fallbackFailure,
   ) async {
-    final cachedCoins = await localDataSource.getCachedCoins(
+    final cachedCoins = await localDataSource.getCachedCoinsWithMetadata(
       page,
       allowStale: true,
     );
-    if (cachedCoins.isEmpty) {
+    if (cachedCoins == null || cachedCoins.data.isEmpty) {
       return Result.failure(fallbackFailure);
     }
 
     return Result.success(
-      DataResult.cache(await _toFavoriteAwareCoins(cachedCoins)),
+      DataResult.cache(
+        await _toFavoriteAwareCoins(cachedCoins.data),
+        lastUpdated: cachedCoins.cachedAt,
+      ),
     );
   }
 
@@ -185,7 +188,7 @@ class CryptoRepositoryImpl implements CryptoRepository {
     String coinId,
     Failure fallbackFailure,
   ) async {
-    final cachedDetail = await localDataSource.getCachedCoinDetail(
+    final cachedDetail = await localDataSource.getCachedCoinDetailWithMetadata(
       coinId,
       allowStale: true,
     );
@@ -193,51 +196,67 @@ class CryptoRepositoryImpl implements CryptoRepository {
       return Result.failure(fallbackFailure);
     }
 
-    return Result.success(DataResult.cache(cachedDetail.toEntity()));
+    return Result.success(
+      DataResult.cache(
+        cachedDetail.data.toEntity(),
+        lastUpdated: cachedDetail.cachedAt,
+      ),
+    );
   }
 
   Future<Result<DataResult<List<TrendingCoin>>>> _cachedTrendingCoins(
     Failure fallbackFailure,
   ) async {
-    final cachedCoins = await localDataSource.getCachedTrendingCoins(
+    final cachedCoins = await localDataSource.getCachedTrendingCoinsWithMetadata(
       allowStale: true,
     );
-    if (cachedCoins.isEmpty) {
+    if (cachedCoins == null || cachedCoins.data.isEmpty) {
       return Result.failure(fallbackFailure);
     }
 
     return Result.success(
-      DataResult.cache(cachedCoins.map((coin) => coin.toEntity()).toList()),
+      DataResult.cache(
+        cachedCoins.data.map((coin) => coin.toEntity()).toList(),
+        lastUpdated: cachedCoins.cachedAt,
+      ),
     );
   }
 
   Future<Result<DataResult<GlobalMarket>>> _cachedGlobalMarket(
     Failure fallbackFailure,
   ) async {
-    final cachedMarket = await localDataSource.getCachedGlobalMarket(
+    final cachedMarket = await localDataSource.getCachedGlobalMarketWithMetadata(
       allowStale: true,
     );
     if (cachedMarket == null) {
       return Result.failure(fallbackFailure);
     }
 
-    return Result.success(DataResult.cache(cachedMarket.toEntity()));
+    return Result.success(
+      DataResult.cache(
+        cachedMarket.data.toEntity(),
+        lastUpdated: cachedMarket.cachedAt,
+      ),
+    );
   }
 
   Future<Result<DataResult<List<Coin>>>> _cachedSearch(
     String query,
     Failure fallbackFailure,
   ) async {
-    final cachedCoins = await localDataSource.searchCachedCoins(
+    final cachedCoins = await localDataSource.searchCachedCoinsWithMetadata(
       query,
       allowStale: true,
     );
-    if (cachedCoins.isEmpty) {
+    if (cachedCoins == null) {
       return Result.failure(fallbackFailure);
     }
 
     return Result.success(
-      DataResult.cache(await _toFavoriteAwareCoins(cachedCoins)),
+      DataResult.cache(
+        await _toFavoriteAwareCoins(cachedCoins.data),
+        lastUpdated: cachedCoins.cachedAt,
+      ),
     );
   }
 
@@ -261,6 +280,10 @@ class CryptoRepositoryImpl implements CryptoRepository {
       CacheException() => const CacheFailure(_cacheMessage),
       NetworkException(code: 'connection_error') =>
         const NetworkFailure(_noInternetMessage),
+      NetworkException(code: 'timeout') => const NetworkFailure(
+          _unableToLoadData,
+          category: FailureCategory.timeout,
+        ),
       NetworkException() => const NetworkFailure(_unableToLoadData),
       ServerException() => const ServerFailure(_unableToLoadData),
       _ => const UnknownFailure(_unableToLoadData),
