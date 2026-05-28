@@ -18,8 +18,7 @@ class DataResult<T> {
   const DataResult.cache(
     T data, {
     DateTime? lastUpdated,
-  })
-      : this(
+  }) : this(
           data,
           source: ResultSource.cache,
           lastUpdated: lastUpdated,

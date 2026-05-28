@@ -240,8 +240,7 @@ const _localizedValues = <String, Map<String, String>>{
         'တောင်းဆိုမှုများလွန်းနေသည်။ ခဏစောင့်ပြီး ထပ်မံကြိုးစားပါ။',
     LocalizationKeys.noInternetConnection:
         'အင်တာနက်ချိတ်ဆက်မှု မရှိပါ။ ရှိပါက သိမ်းထားသော အချက်အလက်များကို ပြပါမည်။',
-    LocalizationKeys.cachedDataUnavailable:
-        'သိမ်းထားသော အချက်အလက် မရှိသေးပါ။',
+    LocalizationKeys.cachedDataUnavailable: 'သိမ်းထားသော အချက်အလက် မရှိသေးပါ။',
     LocalizationKeys.somethingWentWrong:
         'တစ်ခုခု မှားယွင်းသွားသည်။ ထပ်မံကြိုးစားပါ။',
     LocalizationKeys.requestTimedOut:

@@ -25,8 +25,7 @@ abstract class Failure extends Equatable {
 }
 
 class ServerFailure extends Failure {
-  const ServerFailure(super.message)
-      : super(category: FailureCategory.server);
+  const ServerFailure(super.message) : super(category: FailureCategory.server);
 }
 
 class BadRequestFailure extends Failure {
@@ -69,8 +68,8 @@ class CacheFailure extends Failure {
 class NetworkFailure extends Failure {
   const NetworkFailure(
     super.message, {
-    FailureCategory category = FailureCategory.network,
-  }) : super(category: category);
+    super.category = FailureCategory.network,
+  });
 }
 
 class ValidationFailure extends Failure {

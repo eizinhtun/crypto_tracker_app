@@ -45,6 +45,7 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
   final Set<String> _favoriteToggleIds = <String>{};
   bool _isFirstPageLoading = false;
   bool _isPaginationRequestQueued = false;
+  int _searchRequestId = 0;
 
   @override
   Future<void> close() {
@@ -99,13 +100,13 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
     _isFirstPageLoading = true;
     emit(
       state.copyWith(
-          status: isRefresh ? CoinListStatus.refreshing : CoinListStatus.loading,
-          query: '',
-          isOffline: false,
-          clearFailure: true,
-          clearLastUpdated: true,
-        ),
-      );
+        status: isRefresh ? CoinListStatus.refreshing : CoinListStatus.loading,
+        query: '',
+        isOffline: false,
+        clearFailure: true,
+        clearLastUpdated: true,
+      ),
+    );
 
     try {
       final overviewResult = await getCryptoOverviewUseCase();
@@ -119,6 +120,7 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
               coins: overview.coins,
               trendingCoins: overview.trendingCoins,
               globalMarket: overview.globalMarket,
+              clearGlobalMarket: overview.globalMarket == null,
               page: overview.page,
               hasReachedMax: overview.hasReachedMax,
               isOffline: overviewResult.isFromCache,
@@ -205,6 +207,7 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
     Emitter<CoinListState> emit,
   ) async {
     final query = event.query.trim();
+    final requestId = ++_searchRequestId;
     if (query.isEmpty) {
       await _loadFirstPage(emit);
       return;
@@ -223,6 +226,10 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
     );
 
     final result = await searchCoinsUseCase(query);
+
+    if (!_isLatestSearchRequest(requestId, query)) {
+      return;
+    }
 
     switch (result) {
       case Success<DataResult<List<Coin>>>(value: final coinsResult):
@@ -246,6 +253,10 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
           ),
         );
     }
+  }
+
+  bool _isLatestSearchRequest(int requestId, String query) {
+    return requestId == _searchRequestId && state.query.trim() == query;
   }
 
   Future<void> _onFavoriteToggled(

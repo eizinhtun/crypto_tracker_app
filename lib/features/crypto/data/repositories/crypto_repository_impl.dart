@@ -207,7 +207,8 @@ class CryptoRepositoryImpl implements CryptoRepository {
   Future<Result<DataResult<List<TrendingCoin>>>> _cachedTrendingCoins(
     Failure fallbackFailure,
   ) async {
-    final cachedCoins = await localDataSource.getCachedTrendingCoinsWithMetadata(
+    final cachedCoins =
+        await localDataSource.getCachedTrendingCoinsWithMetadata(
       allowStale: true,
     );
     if (cachedCoins == null || cachedCoins.data.isEmpty) {
@@ -225,7 +226,8 @@ class CryptoRepositoryImpl implements CryptoRepository {
   Future<Result<DataResult<GlobalMarket>>> _cachedGlobalMarket(
     Failure fallbackFailure,
   ) async {
-    final cachedMarket = await localDataSource.getCachedGlobalMarketWithMetadata(
+    final cachedMarket =
+        await localDataSource.getCachedGlobalMarketWithMetadata(
       allowStale: true,
     );
     if (cachedMarket == null) {

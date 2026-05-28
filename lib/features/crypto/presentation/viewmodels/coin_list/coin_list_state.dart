@@ -62,6 +62,7 @@ class CoinListState extends Equatable {
     bool? isOffline,
     FailureCategory? failureCategory,
     DateTime? lastUpdated,
+    bool clearGlobalMarket = false,
     bool clearFailure = false,
     bool clearLastUpdated = false,
   }) {
@@ -69,7 +70,8 @@ class CoinListState extends Equatable {
       status: status ?? this.status,
       coins: coins ?? this.coins,
       trendingCoins: trendingCoins ?? this.trendingCoins,
-      globalMarket: globalMarket ?? this.globalMarket,
+      globalMarket:
+          clearGlobalMarket ? null : globalMarket ?? this.globalMarket,
       page: page ?? this.page,
       hasReachedMax: hasReachedMax ?? this.hasReachedMax,
       query: query ?? this.query,
