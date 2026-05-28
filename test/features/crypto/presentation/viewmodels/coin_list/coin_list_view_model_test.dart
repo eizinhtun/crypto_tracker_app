@@ -71,6 +71,61 @@ void main() {
     );
 
     blocTest<CoinListViewModel, CoinListState>(
+      'Given refresh fails with existing data, when refreshed, then existing data remains with non-blocking failure',
+      build: () {
+        when(
+          () => repository.getCoins(
+            page: AppConstants.firstPage,
+            perPage: AppConstants.defaultPageSize,
+          ),
+        ).thenAnswer(
+          (_) async => const Result.failure(
+            ServerFailure('Unable to load data. Please try again.'),
+          ),
+        );
+        when(() => repository.getTrendingCoins()).thenAnswer(
+          (_) async => const Result.success(DataResult.remote(_trendingCoins)),
+        );
+        when(() => repository.getGlobalMarket()).thenAnswer(
+          (_) async => const Result.success(DataResult.remote(_globalMarket)),
+        );
+        return _createViewModel(repository);
+      },
+      seed: () => CoinListState.initial().copyWith(
+        status: CoinListStatus.success,
+        coins: _coins,
+        trendingCoins: _trendingCoins,
+        globalMarket: _globalMarket,
+        page: 1,
+        hasReachedMax: false,
+      ),
+      act: (viewModel) => viewModel.add(const CoinListRefreshRequested()),
+      expect: () => [
+        isA<CoinListState>()
+            .having(
+              (state) => state.status,
+              'status',
+              CoinListStatus.refreshing,
+            )
+            .having((state) => state.coins, 'coins', _coins),
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.success)
+            .having((state) => state.coins, 'coins', _coins)
+            .having((state) => state.isOffline, 'isOffline', isFalse)
+            .having(
+              (state) => state.failureCategory,
+              'failureCategory',
+              isNull,
+            )
+            .having(
+              (state) => state.transientFailureCategory,
+              'transientFailureCategory',
+              FailureCategory.server,
+            ),
+      ],
+    );
+
+    blocTest<CoinListViewModel, CoinListState>(
       'Given repository failure has raw text, when started, then state stores only failure category',
       build: () {
         when(
@@ -265,6 +320,73 @@ void main() {
       },
     );
 
+    late Completer<Result<DataResult<List<Coin>>>> favoriteSearch;
+
+    blocTest<CoinListViewModel, CoinListState>(
+      'Given search mode is active, when favorite is toggled, then clearing search restores updated favorite state',
+      build: () {
+        favoriteSearch = Completer<Result<DataResult<List<Coin>>>>();
+        when(() => repository.searchCoins('btc')).thenAnswer(
+          (_) => favoriteSearch.future,
+        );
+        when(() => repository.toggleFavorite('bitcoin')).thenAnswer(
+          (_) async => const Result.success(true, source: ResultSource.local),
+        );
+        return _createViewModel(repository);
+      },
+      seed: () => CoinListState.initial().copyWith(
+        status: CoinListStatus.success,
+        coins: _coins,
+        page: 1,
+        hasReachedMax: false,
+        trendingCoins: _trendingCoins,
+        globalMarket: _globalMarket,
+      ),
+      act: (viewModel) async {
+        viewModel.add(const CoinListSearchDebounced('btc'));
+        await untilCalled(() => repository.searchCoins('btc'));
+        favoriteSearch.complete(
+          const Result.success(DataResult.remote(_coins)),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        viewModel.add(const CoinListFavoriteToggled('bitcoin'));
+        await untilCalled(() => repository.toggleFavorite('bitcoin'));
+        await Future<void>.delayed(Duration.zero);
+
+        viewModel.add(const CoinListSearchDebounced(''));
+      },
+      expect: () => [
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.loading)
+            .having((state) => state.query, 'query', 'btc'),
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.success)
+            .having((state) => state.query, 'query', 'btc')
+            .having(
+              (state) => state.coins.first.isFavorite,
+              'search favorite',
+              isFalse,
+            ),
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.success)
+            .having((state) => state.query, 'query', 'btc')
+            .having(
+              (state) => state.coins.first.isFavorite,
+              'search favorite',
+              isTrue,
+            ),
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.success)
+            .having((state) => state.query, 'query', '')
+            .having(
+              (state) => state.coins.first.isFavorite,
+              'restored favorite',
+              isTrue,
+            ),
+      ],
+    );
+
     blocTest<CoinListViewModel, CoinListState>(
       'Given a successful list, when favorite is toggled, then selected coin is updated',
       build: () {
@@ -314,6 +436,104 @@ void main() {
           () => repository.getCoins(
             page: any(named: 'page'),
             perPage: any(named: 'perPage'),
+          ),
+        );
+      },
+    );
+
+    blocTest<CoinListViewModel, CoinListState>(
+      'Given page 1 exists and page 2 contains duplicate IDs, when next page loads, then duplicates are not appended',
+      build: () {
+        when(
+          () => repository.getCoins(
+            page: 2,
+            perPage: AppConstants.defaultPageSize,
+          ),
+        ).thenAnswer(
+          (_) async => const Result.success(
+            DataResult.remote(_overlappingPageTwoCoins),
+          ),
+        );
+        return _createViewModel(repository);
+      },
+      seed: () => CoinListState.initial().copyWith(
+        status: CoinListStatus.success,
+        coins: _coins,
+        page: 1,
+      ),
+      act: (viewModel) => viewModel.add(const CoinListNextPageRequested()),
+      expect: () => [
+        isA<CoinListState>().having(
+          (state) => state.status,
+          'status',
+          CoinListStatus.loadingMore,
+        ),
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.success)
+            .having(
+              (state) => state.coins.map((coin) => coin.id).toList(),
+              'coin ids',
+              ['bitcoin', 'solana'],
+            )
+            .having((state) => state.page, 'page', 2)
+            .having((state) => state.hasReachedMax, 'hasReachedMax', isTrue),
+      ],
+    );
+
+    blocTest<CoinListViewModel, CoinListState>(
+      'Given page 2 contains only duplicate IDs, when next page loads, then list length does not grow and pagination stops',
+      build: () {
+        when(
+          () => repository.getCoins(
+            page: 2,
+            perPage: AppConstants.defaultPageSize,
+          ),
+        ).thenAnswer(
+          (_) async => Result.success(
+            DataResult.remote(_duplicateBitcoinPage),
+          ),
+        );
+        return _createViewModel(repository);
+      },
+      seed: () => CoinListState.initial().copyWith(
+        status: CoinListStatus.success,
+        coins: _coins,
+        page: 1,
+      ),
+      act: (viewModel) async {
+        viewModel.add(const CoinListNextPageRequested());
+        await untilCalled(
+          () => repository.getCoins(
+            page: 2,
+            perPage: AppConstants.defaultPageSize,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+        viewModel.add(const CoinListNextPageRequested());
+      },
+      expect: () => [
+        isA<CoinListState>().having(
+          (state) => state.status,
+          'status',
+          CoinListStatus.loadingMore,
+        ),
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.success)
+            .having((state) => state.coins.length, 'coin count', 1)
+            .having((state) => state.page, 'page', 2)
+            .having((state) => state.hasReachedMax, 'hasReachedMax', isTrue),
+      ],
+      verify: (_) {
+        verify(
+          () => repository.getCoins(
+            page: 2,
+            perPage: AppConstants.defaultPageSize,
+          ),
+        ).called(1);
+        verifyNever(
+          () => repository.getCoins(
+            page: 3,
+            perPage: AppConstants.defaultPageSize,
           ),
         );
       },
@@ -440,6 +660,16 @@ const _ethereumCoins = [
 const _pageThreeCoins = [
   Coin(id: 'solana', symbol: 'sol', name: 'Solana'),
 ];
+
+const _overlappingPageTwoCoins = [
+  Coin(id: 'bitcoin', symbol: 'btc', name: 'Bitcoin'),
+  Coin(id: 'solana', symbol: 'sol', name: 'Solana'),
+];
+
+final _duplicateBitcoinPage = List<Coin>.filled(
+  AppConstants.defaultPageSize,
+  _coins.first,
+);
 
 const _trendingCoins = [
   TrendingCoin(id: 'bitcoin', symbol: 'btc', name: 'Bitcoin'),

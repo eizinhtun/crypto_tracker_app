@@ -98,6 +98,7 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
     Emitter<CoinListState> emit, {
     bool isRefresh = false,
   }) async {
+    final previousState = state;
     _isFirstPageLoading = true;
     _browseStateBeforeSearch = null;
     emit(
@@ -106,6 +107,7 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
         query: '',
         isOffline: false,
         clearFailure: true,
+        clearTransientFailure: true,
         clearLastUpdated: true,
       ),
     );
@@ -128,15 +130,28 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
               isOffline: overviewResult.isFromCache,
               lastUpdated: overviewResult.lastUpdated,
               clearFailure: true,
+              clearTransientFailure: true,
               clearLastUpdated: !overviewResult.isFromCache,
             ),
           );
         case Error(failure: final failure):
+          if (isRefresh && previousState.coins.isNotEmpty) {
+            emit(
+              previousState.copyWith(
+                status: CoinListStatus.success,
+                transientFailureCategory: failure.category,
+                clearFailure: true,
+              ),
+            );
+            return;
+          }
+
           emit(
             state.copyWith(
               status: CoinListStatus.failure,
-              isOffline: true,
+              isOffline: false,
               failureCategory: failure.category,
+              clearTransientFailure: true,
             ),
           );
       }
@@ -165,15 +180,19 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
       switch (result) {
         case Success<DataResult<List<Coin>>>(value: final coinsResult):
           final coins = coinsResult.data;
+          final newCoins = _newCoinsOnly(state.coins, coins);
+          final hasNoNewCoins = coins.isNotEmpty && newCoins.isEmpty;
           emit(
             state.copyWith(
               status: CoinListStatus.success,
-              coins: [...state.coins, ...coins],
+              coins: [...state.coins, ...newCoins],
               page: nextPage,
-              hasReachedMax: coins.length < AppConstants.defaultPageSize,
+              hasReachedMax:
+                  coins.length < AppConstants.defaultPageSize || hasNoNewCoins,
               isOffline: coinsResult.isFromCache,
               lastUpdated: coinsResult.lastUpdated,
               clearFailure: true,
+              clearTransientFailure: true,
               clearLastUpdated: !coinsResult.isFromCache,
             ),
           );
@@ -231,6 +250,7 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
         hasReachedMax: true,
         isOffline: false,
         clearFailure: true,
+        clearTransientFailure: true,
         clearLastUpdated: true,
       ),
     );
@@ -252,6 +272,7 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
             isOffline: coinsResult.isFromCache,
             lastUpdated: coinsResult.lastUpdated,
             clearFailure: true,
+            clearTransientFailure: true,
             clearLastUpdated: !coinsResult.isFromCache,
           ),
         );
@@ -292,6 +313,11 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
 
       switch (result) {
         case Success<bool>(value: final isFavorite):
+          _browseStateBeforeSearch = _favoriteUpdatedStateForSnapshot(
+            _browseStateBeforeSearch,
+            event.coinId,
+            isFavorite,
+          );
           emit(_favoriteUpdatedState(event.coinId, isFavorite));
         case Error<bool>(failure: final failure):
           emit(state.copyWith(failureCategory: failure.category));
@@ -313,6 +339,11 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
 
     switch (result) {
       case Success<bool>(value: final isFavorite):
+        _browseStateBeforeSearch = _favoriteUpdatedStateForSnapshot(
+          _browseStateBeforeSearch,
+          event.coinId,
+          isFavorite,
+        );
         emit(_favoriteUpdatedState(event.coinId, isFavorite));
       case Error<bool>(failure: final failure):
         emit(state.copyWith(failureCategory: failure.category));
@@ -320,15 +351,41 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
   }
 
   CoinListState _favoriteUpdatedState(String coinId, bool isFavorite) {
-    return state.copyWith(
-      coins: state.coins.map((coin) {
+    return _favoriteUpdatedStateFor(state, coinId, isFavorite).copyWith(
+      clearFailure: true,
+    );
+  }
+
+  CoinListState? _favoriteUpdatedStateForSnapshot(
+    CoinListState? snapshot,
+    String coinId,
+    bool isFavorite,
+  ) {
+    if (snapshot == null) {
+      return null;
+    }
+
+    return _favoriteUpdatedStateFor(snapshot, coinId, isFavorite);
+  }
+
+  CoinListState _favoriteUpdatedStateFor(
+    CoinListState source,
+    String coinId,
+    bool isFavorite,
+  ) {
+    return source.copyWith(
+      coins: source.coins.map((coin) {
         if (coin.id != coinId) {
           return coin;
         }
 
         return coin.copyWith(isFavorite: isFavorite);
       }).toList(),
-      clearFailure: true,
     );
+  }
+
+  List<Coin> _newCoinsOnly(List<Coin> existingCoins, List<Coin> nextCoins) {
+    final seenIds = existingCoins.map((coin) => coin.id).toSet();
+    return nextCoins.where((coin) => seenIds.add(coin.id)).toList();
   }
 }

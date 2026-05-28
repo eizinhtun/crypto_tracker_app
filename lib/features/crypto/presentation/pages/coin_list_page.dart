@@ -70,7 +70,21 @@ class _CoinListPageState extends State<CoinListPage> {
 
     return Scaffold(
       backgroundColor: colors.background,
-      body: BlocBuilder<CoinListViewModel, CoinListState>(
+      body: BlocConsumer<CoinListViewModel, CoinListState>(
+        listenWhen: (previous, current) {
+          return previous.transientFailureCategory !=
+                  current.transientFailureCategory &&
+              current.transientFailureCategory != null;
+        },
+        listener: (context, state) {
+          final message = context.l10n.failureMessage(
+            state.transientFailureCategory,
+            fallback: context.l10n.unableToLoadCoins,
+          );
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(message)));
+        },
         builder: (context, state) {
           if (state.status == CoinListStatus.loading && state.coins.isEmpty) {
             return const LoadingView();

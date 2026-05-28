@@ -25,6 +25,7 @@ class CoinListState extends Equatable {
     required this.isOffline,
     this.globalMarket,
     this.failureCategory,
+    this.transientFailureCategory,
     this.lastUpdated,
   });
 
@@ -49,6 +50,7 @@ class CoinListState extends Equatable {
   final String query;
   final bool isOffline;
   final FailureCategory? failureCategory;
+  final FailureCategory? transientFailureCategory;
   final DateTime? lastUpdated;
 
   CoinListState copyWith({
@@ -61,9 +63,11 @@ class CoinListState extends Equatable {
     String? query,
     bool? isOffline,
     FailureCategory? failureCategory,
+    FailureCategory? transientFailureCategory,
     DateTime? lastUpdated,
     bool clearGlobalMarket = false,
     bool clearFailure = false,
+    bool clearTransientFailure = false,
     bool clearLastUpdated = false,
   }) {
     return CoinListState(
@@ -78,6 +82,9 @@ class CoinListState extends Equatable {
       isOffline: isOffline ?? this.isOffline,
       failureCategory:
           clearFailure ? null : failureCategory ?? this.failureCategory,
+      transientFailureCategory: clearTransientFailure
+          ? null
+          : transientFailureCategory ?? this.transientFailureCategory,
       lastUpdated: clearLastUpdated ? null : lastUpdated ?? this.lastUpdated,
     );
   }
@@ -93,6 +100,7 @@ class CoinListState extends Equatable {
         query,
         isOffline,
         failureCategory,
+        transientFailureCategory,
         lastUpdated,
       ];
 }

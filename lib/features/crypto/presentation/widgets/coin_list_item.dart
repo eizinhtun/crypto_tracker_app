@@ -45,7 +45,7 @@ class CoinListItem extends StatelessWidget {
           child: Row(
             children: [
               SizedBox(
-                width: 22,
+                width: 34,
                 child: Text(
                   '$rank',
                   maxLines: 1,
