@@ -46,7 +46,7 @@ class CryptoRepositoryImpl implements CryptoRepository {
 
     return _cachedCoins(
       page,
-      const NetworkFailure('No internet connection'),
+      const NetworkFailure(_noInternetMessage),
     );
   }
 
@@ -66,7 +66,7 @@ class CryptoRepositoryImpl implements CryptoRepository {
 
     return _cachedCoinDetail(
       coinId,
-      const NetworkFailure('No internet connection'),
+      const NetworkFailure(_noInternetMessage),
     );
   }
 
@@ -87,7 +87,7 @@ class CryptoRepositoryImpl implements CryptoRepository {
     }
 
     return _cachedTrendingCoins(
-      const NetworkFailure('No internet connection'),
+      const NetworkFailure(_noInternetMessage),
     );
   }
 
@@ -106,7 +106,7 @@ class CryptoRepositoryImpl implements CryptoRepository {
     }
 
     return _cachedGlobalMarket(
-      const NetworkFailure('No internet connection'),
+      const NetworkFailure(_noInternetMessage),
     );
   }
 
@@ -132,7 +132,7 @@ class CryptoRepositoryImpl implements CryptoRepository {
 
     return _cachedSearch(
       trimmedQuery,
-      const NetworkFailure('No internet connection'),
+      const NetworkFailure(_noInternetMessage),
     );
   }
 
@@ -250,20 +250,28 @@ class CryptoRepositoryImpl implements CryptoRepository {
 
   Failure _failureFromException(AppException error) {
     return switch (error) {
-      BadRequestException() => BadRequestFailure(error.message),
-      UnauthorizedException() => UnauthorizedFailure(error.message),
-      ForbiddenException() => ForbiddenFailure(error.message),
-      NotFoundException() => NotFoundFailure(error.message),
+      BadRequestException() => const BadRequestFailure(_unableToLoadData),
+      UnauthorizedException() => const UnauthorizedFailure(_unableToLoadData),
+      ForbiddenException() => const ForbiddenFailure(_unableToLoadData),
+      NotFoundException() => const NotFoundFailure(_notFoundMessage),
       RateLimitException(retryAfter: final retryAfter) => RateLimitFailure(
-          error.message,
+          _rateLimitMessage,
           retryAfter: retryAfter,
         ),
-      CacheException() => CacheFailure(error.message),
-      NetworkException() => NetworkFailure(error.message),
-      ServerException() => ServerFailure(error.message),
-      _ => UnknownFailure(error.message),
+      CacheException() => const CacheFailure(_cacheMessage),
+      NetworkException(code: 'connection_error') =>
+        const NetworkFailure(_noInternetMessage),
+      NetworkException() => const NetworkFailure(_unableToLoadData),
+      ServerException() => const ServerFailure(_unableToLoadData),
+      _ => const UnknownFailure(_unableToLoadData),
     };
   }
 }
 
-const _unexpectedFailure = UnknownFailure('Something went wrong. Try again.');
+const _unableToLoadData = 'Unable to load data. Please try again.';
+const _noInternetMessage =
+    'No internet connection. Showing cached data if available.';
+const _notFoundMessage = 'Requested data was not found.';
+const _rateLimitMessage = 'Too many requests. Please wait and try again.';
+const _cacheMessage = 'Unable to load saved data. Please try again.';
+const _unexpectedFailure = UnknownFailure(_unableToLoadData);

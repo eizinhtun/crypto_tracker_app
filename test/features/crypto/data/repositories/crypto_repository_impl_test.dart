@@ -146,9 +146,39 @@ void main() {
         case Error(failure: final failure):
           expect(failure, isA<RateLimitFailure>());
           expect(
+            failure.message,
+            'Too many requests. Please wait and try again.',
+          );
+          expect(
             (failure as RateLimitFailure).retryAfter,
             const Duration(seconds: 30),
           );
+      }
+    });
+
+    test(
+        'Given remote failure contains raw Dio text, when no cache exists, then user-facing failure is returned',
+        () async {
+      final remote = _FakeRemoteDataSource()
+        ..coinsError = const ServerException(
+          'DioException [bad response]: https://api.coingecko.com/api/v3/coins/markets',
+        );
+      final repository = CryptoRepositoryImpl(
+        remoteDataSource: remote,
+        localDataSource: _FakeLocalDataSource(),
+        networkInfo: const _FakeNetworkInfo(isConnected: true),
+      );
+
+      final result = await repository.getCoins(page: 1, perPage: 25);
+
+      switch (result) {
+        case Success():
+          fail('Expected sanitized failure');
+        case Error(failure: final failure):
+          expect(failure, isA<ServerFailure>());
+          expect(failure.message, 'Unable to load data. Please try again.');
+          expect(failure.message, isNot(contains('DioException')));
+          expect(failure.message, isNot(contains('api.coingecko.com')));
       }
     });
 

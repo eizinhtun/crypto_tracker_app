@@ -1,4 +1,5 @@
 import 'package:crypto_tracker_app/core/constants/app_constants.dart';
+import 'package:crypto_tracker_app/core/constants/api_constants.dart';
 import 'package:crypto_tracker_app/core/utils/currency_formatter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -10,6 +11,14 @@ void main() {
 
     test('formats percentages consistently', () {
       expect(CurrencyFormatter.percentage(1.234), '1.23%');
+    });
+
+    test('uses HTTPS CoinGecko base URL', () {
+      final uri = Uri.parse(ApiConstants.baseUrl);
+
+      expect(uri.scheme, 'https');
+      expect(uri.host, 'api.coingecko.com');
+      expect(uri.path, '/api/v3');
     });
   });
 }

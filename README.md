@@ -79,14 +79,25 @@ CoinGecko integration is isolated in `CryptoRemoteDataSource` behind
 
 - base URL and timeout configuration;
 - JSON accept headers;
-- optional API key from `--dart-define=COINGECKO_API_KEY`;
-- optional header override via `COINGECKO_API_KEY_HEADER`;
 - debug-only logging;
 - retry/backoff for GET requests on 429 and transient server/network failures;
 - structured mapping for 400, 401/403, 404, 408/timeouts, 429, 500+, and
   connection errors.
 
 Raw `DioException` messages are not exposed directly to UI state.
+
+## Security Considerations
+
+- CoinGecko Free API is used without an API key.
+- No API keys, tokens, or secrets are hardcoded.
+- API communication uses HTTPS through the centralized CoinGecko base URL.
+- Dio logging is enabled only in debug mode and does not log headers or bodies.
+- Network errors are mapped to user-friendly messages.
+- Hive stores only non-sensitive public market cache and favorite coin IDs.
+- Duplicate requests are prevented to reduce unnecessary traffic and rate-limit
+  issues.
+- For production apps with authentication, secure storage and stronger runtime
+  protections would be considered.
 
 ## Offline Cache
 
@@ -164,14 +175,6 @@ flutter test
 ```sh
 flutter pub get
 flutter run
-```
-
-Optional CoinGecko API key:
-
-```sh
-flutter run \
-  --dart-define=COINGECKO_API_KEY=your_key \
-  --dart-define=COINGECKO_API_KEY_HEADER=x-cg-demo-api-key
 ```
 
 ## Local Verification

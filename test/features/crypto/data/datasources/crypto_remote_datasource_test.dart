@@ -19,7 +19,12 @@ void main() {
           expect(options.uri.queryParameters['vs_currency'], 'usd');
           expect(options.uri.queryParameters['page'], '2');
           expect(options.uri.queryParameters['per_page'], '10');
-          expect(options.headers['x-cg-demo-api-key'], 'test-api-key');
+          expect(
+            options.headers.keys.where(
+              (key) => key.toString().toLowerCase().contains('key'),
+            ),
+            isEmpty,
+          );
 
           return ResponseBody.fromString(
             jsonEncode([
@@ -37,7 +42,7 @@ void main() {
           );
         },
       );
-      final dataSource = _createDataSource(adapter, apiKey: 'test-api-key');
+      final dataSource = _createDataSource(adapter);
 
       final coins = await dataSource.getCoins(page: 2, perPage: 10);
 
@@ -240,6 +245,11 @@ void main() {
           isA<RateLimitException>()
               .having((error) => error.code, 'code', '429')
               .having(
+                (error) => error.message,
+                'message',
+                'Too many requests. Please wait and try again.',
+              )
+              .having(
                 (error) => error.retryAfter,
                 'retryAfter',
                 const Duration(seconds: 30),
@@ -270,7 +280,7 @@ void main() {
               .having(
                 (error) => error.message,
                 'message',
-                'temporary outage',
+                'Unable to load data. Please try again.',
               ),
         ),
       );
@@ -337,7 +347,11 @@ void main() {
         throwsA(
           isA<UnauthorizedException>()
               .having((error) => error.code, 'code', '401')
-              .having((error) => error.message, 'message', 'invalid key'),
+              .having(
+                (error) => error.message,
+                'message',
+                'Unable to load data. Please try again.',
+              ),
         ),
       );
     });
@@ -350,7 +364,6 @@ final _jsonHeaders = {
 
 CryptoRemoteDataSourceImpl _createDataSource(
   HttpClientAdapter adapter, {
-  String apiKey = '',
   int maxRetries = 0,
   Duration retryBaseDelay = Duration.zero,
 }) {
@@ -358,7 +371,6 @@ CryptoRemoteDataSourceImpl _createDataSource(
   return CryptoRemoteDataSourceImpl(
     DioClient(
       dio: dio,
-      apiKey: apiKey,
       maxRetries: maxRetries,
       retryBaseDelay: retryBaseDelay,
       enableLogging: false,

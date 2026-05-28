@@ -84,32 +84,21 @@ the View.
 ## REST Integration
 
 CoinGecko access is isolated behind `CryptoRemoteDataSource` and `DioClient`.
-The UI and domain layers do not know about Dio, headers, API keys, or HTTP
-status codes.
-
-API configuration is provided through compile-time environment values:
-
-```sh
-flutter run \
-  --dart-define=COINGECKO_API_KEY=your_key \
-  --dart-define=COINGECKO_API_KEY_HEADER=x-cg-demo-api-key
-```
-
-`COINGECKO_API_KEY_HEADER` defaults to `x-cg-demo-api-key`. `COINGECKO_BASE_URL`
-can also be overridden for different CoinGecko environments.
+The UI and domain layers do not know about Dio, headers, or HTTP status codes.
+The app uses CoinGecko Free API without an API key. The HTTPS base URL is
+centralized in `ApiConstants`.
 
 `DioClient` installs interceptors for:
 
-- API-key header injection;
 - common JSON accept headers;
 - limited GET retry/backoff for 429, transient 5xx, timeout, and connection
   failures;
 - HTTP/Dio error mapping.
 
 HTTP failures are mapped at the network boundary into typed application
-exceptions, including unauthorized, forbidden, not found, server, network, and
-rate-limit exceptions. `429` responses preserve `Retry-After` metadata when the
-header is available.
+exceptions with user-facing messages, including unauthorized, forbidden, not
+found, server, network, and rate-limit exceptions. `429` responses preserve
+`Retry-After` metadata when the header is available.
 
 Search uses a two-step CoinGecko flow so list rows keep complete market data:
 
@@ -237,8 +226,8 @@ reviewable in CI.
   architecture layer.
 - UI-to-API calls are not allowed. API access is isolated behind the remote data
   source and repository implementation.
-- REST concerns such as API keys, interceptors, rate limits, and HTTP status
-  mapping are handled in `core/network`, not in widgets or ViewModels.
+- REST concerns such as interceptors, rate limits, and HTTP status mapping are
+  handled in `core/network`, not in widgets or ViewModels.
 - DTO inheritance from domain entities is avoided. Data models map into domain
   entities explicitly.
 - Offline behavior is explicit through `DataResult.isFromCache`, not inferred

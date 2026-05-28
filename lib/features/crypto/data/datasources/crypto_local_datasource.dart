@@ -54,6 +54,7 @@ abstract class CryptoLocalDataSource {
 }
 
 class CryptoLocalDataSourceImpl implements CryptoLocalDataSource {
+  // Hive stores only non-sensitive public market cache and favorite coin IDs.
   const CryptoLocalDataSourceImpl({
     required this.coinsBox,
     required this.coinDetailsBox,
