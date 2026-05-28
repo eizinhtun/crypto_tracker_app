@@ -46,6 +46,7 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
   bool _isFirstPageLoading = false;
   bool _isPaginationRequestQueued = false;
   int _searchRequestId = 0;
+  CoinListState? _browseStateBeforeSearch;
 
   @override
   Future<void> close() {
@@ -98,6 +99,7 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
     bool isRefresh = false,
   }) async {
     _isFirstPageLoading = true;
+    _browseStateBeforeSearch = null;
     emit(
       state.copyWith(
         status: isRefresh ? CoinListStatus.refreshing : CoinListStatus.loading,
@@ -209,10 +211,18 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
     final query = event.query.trim();
     final requestId = ++_searchRequestId;
     if (query.isEmpty) {
+      final browseState = _browseStateBeforeSearch;
+      if (browseState != null) {
+        _browseStateBeforeSearch = null;
+        emit(browseState);
+        return;
+      }
+
       await _loadFirstPage(emit);
       return;
     }
 
+    _cacheBrowseStateBeforeSearch();
     emit(
       state.copyWith(
         status: CoinListStatus.loading,
@@ -257,6 +267,16 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
 
   bool _isLatestSearchRequest(int requestId, String query) {
     return requestId == _searchRequestId && state.query.trim() == query;
+  }
+
+  void _cacheBrowseStateBeforeSearch() {
+    if (_browseStateBeforeSearch != null || state.query.trim().isNotEmpty) {
+      return;
+    }
+
+    if (state.status == CoinListStatus.success) {
+      _browseStateBeforeSearch = state;
+    }
   }
 
   Future<void> _onFavoriteToggled(

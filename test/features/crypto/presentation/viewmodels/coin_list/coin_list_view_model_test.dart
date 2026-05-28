@@ -177,6 +177,94 @@ void main() {
       ],
     );
 
+    late Completer<Result<DataResult<List<Coin>>>> search;
+
+    blocTest<CoinListViewModel, CoinListState>(
+      'Given search results are shown, when search is cleared, then browse list is restored and pagination resumes',
+      build: () {
+        search = Completer<Result<DataResult<List<Coin>>>>();
+        when(() => repository.searchCoins('eth')).thenAnswer(
+          (_) => search.future,
+        );
+        when(
+          () => repository.getCoins(
+            page: 3,
+            perPage: AppConstants.defaultPageSize,
+          ),
+        ).thenAnswer(
+          (_) async => const Result.success(
+            DataResult.remote(_pageThreeCoins),
+          ),
+        );
+        return _createViewModel(repository);
+      },
+      seed: () => CoinListState.initial().copyWith(
+        status: CoinListStatus.success,
+        coins: _coins,
+        page: 2,
+        hasReachedMax: false,
+        trendingCoins: _trendingCoins,
+        globalMarket: _globalMarket,
+      ),
+      act: (viewModel) async {
+        viewModel.add(const CoinListSearchDebounced('eth'));
+        await untilCalled(() => repository.searchCoins('eth'));
+        search.complete(
+          const Result.success(DataResult.remote(_ethereumCoins)),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        viewModel.add(const CoinListSearchChanged(''));
+        await Future<void>.delayed(Duration.zero);
+
+        viewModel.add(
+          const CoinListScrollChanged(
+            pixels: 700,
+            maxScrollExtent: 1000,
+          ),
+        );
+      },
+      expect: () => [
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.loading)
+            .having((state) => state.query, 'query', 'eth'),
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.success)
+            .having((state) => state.query, 'query', 'eth')
+            .having((state) => state.coins, 'coins', _ethereumCoins)
+            .having((state) => state.hasReachedMax, 'hasReachedMax', isTrue),
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.success)
+            .having((state) => state.query, 'query', '')
+            .having((state) => state.coins, 'coins', _coins)
+            .having((state) => state.page, 'page', 2)
+            .having((state) => state.hasReachedMax, 'hasReachedMax', isFalse),
+        isA<CoinListState>().having(
+          (state) => state.status,
+          'status',
+          CoinListStatus.loadingMore,
+        ),
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.success)
+            .having(
+              (state) => state.coins,
+              'coins',
+              [..._coins, ..._pageThreeCoins],
+            )
+            .having((state) => state.page, 'page', 3)
+            .having((state) => state.query, 'query', ''),
+      ],
+      verify: (_) {
+        verify(() => repository.searchCoins('eth')).called(1);
+        verify(
+          () => repository.getCoins(
+            page: 3,
+            perPage: AppConstants.defaultPageSize,
+          ),
+        ).called(1);
+      },
+    );
+
     blocTest<CoinListViewModel, CoinListState>(
       'Given a successful list, when favorite is toggled, then selected coin is updated',
       build: () {
@@ -347,6 +435,10 @@ const _coins = [
 
 const _ethereumCoins = [
   Coin(id: 'ethereum', symbol: 'eth', name: 'Ethereum'),
+];
+
+const _pageThreeCoins = [
+  Coin(id: 'solana', symbol: 'sol', name: 'Solana'),
 ];
 
 const _trendingCoins = [

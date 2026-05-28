@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../domain/entities/global_market.dart';
 
@@ -48,11 +49,7 @@ class GlobalMarketCard extends StatelessWidget {
                 CurrencyFormatter.percentage(change),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: changeColor,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0,
-                    ),
+                style: AppTextStyles.percentageBadge(changeColor),
               ),
             ),
           ),
@@ -98,12 +95,7 @@ class _MarketMetric extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: colors.muted,
-                letterSpacing: 2.0,
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-              ),
+          style: AppTextStyles.statLabel(colors.muted),
         ),
         const SizedBox(height: 5),
         Row(
@@ -114,13 +106,10 @@ class _MarketMetric extends StatelessWidget {
                 value,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: colors.primaryText,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0,
-                      height: 1,
-                    ),
+                style: AppTextStyles.statValue(colors.primaryText).copyWith(
+                  fontSize: 24,
+                  height: 1,
+                ),
               ),
             ),
             if (trailing != null) ...[

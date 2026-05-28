@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/entities/trending_coin.dart';
 import 'coin_network_image.dart';
 
@@ -37,22 +38,12 @@ class TrendingCoinSection extends StatelessWidget {
               const SizedBox(width: 5),
               Text(
                 l10n.trending24h,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: colors.muted,
-                      letterSpacing: 2.0,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                    ),
+                style: AppTextStyles.sectionLabel(colors.muted),
               ),
               const Spacer(),
               Text(
                 l10n.coinCount(coins.length),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: colors.muted,
-                      letterSpacing: 1.4,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                    ),
+                style: AppTextStyles.statLabel(colors.muted),
               ),
             ],
           ),
@@ -112,23 +103,13 @@ class _TrendingCoinCard extends StatelessWidget {
                       coin.symbol.toUpperCase(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: colors.primaryText,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0,
-                          ),
+                      style: AppTextStyles.coinMeta(colors.primaryText),
                     ),
                     Text(
                       coin.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: colors.secondaryText,
-                            fontSize: 10,
-                            letterSpacing: 0,
-                            fontWeight: FontWeight.w700,
-                          ),
+                      style: AppTextStyles.coinMeta(colors.secondaryText),
                     ),
                   ],
                 ),
@@ -145,12 +126,7 @@ class _TrendingCoinCard extends StatelessWidget {
                   ),
                   child: Text(
                     '#${coin.marketCapRank}',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: colors.muted,
-                          fontSize: 9,
-                          letterSpacing: 0,
-                          fontWeight: FontWeight.w900,
-                        ),
+                    style: AppTextStyles.rank(colors.muted),
                   ),
                 ),
             ],
@@ -163,12 +139,7 @@ class _TrendingCoinCard extends StatelessWidget {
                   coin.id,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: colors.primaryText,
-                        fontSize: 12,
-                        letterSpacing: 0,
-                        fontWeight: FontWeight.w800,
-                      ),
+                  style: AppTextStyles.coinMeta(colors.primaryText),
                 ),
               ),
               if (coin.score != null)
@@ -201,12 +172,7 @@ class _ScoreBadge extends StatelessWidget {
       ),
       child: Text(
         '+$score',
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.positive,
-              fontSize: 9,
-              letterSpacing: 0,
-              fontWeight: FontWeight.w900,
-            ),
+        style: AppTextStyles.percentageBadge(AppColors.positive),
       ),
     );
   }

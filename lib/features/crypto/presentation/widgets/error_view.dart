@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/theme/app_text_styles.dart';
 
 class ErrorView extends StatelessWidget {
   const ErrorView({
@@ -29,14 +30,21 @@ class ErrorView extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge,
+              style: AppTextStyles.body(
+                Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 16),
               FilledButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: Text(context.l10n.retry),
+                label: Text(
+                  context.l10n.retry,
+                  style: AppTextStyles.body(
+                    Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
               ),
             ],
           ],

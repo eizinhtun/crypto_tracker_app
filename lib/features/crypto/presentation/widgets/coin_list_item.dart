@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../domain/entities/coin.dart';
 import 'coin_network_image.dart';
@@ -49,11 +50,7 @@ class CoinListItem extends StatelessWidget {
                   '$rank',
                   maxLines: 1,
                   textAlign: TextAlign.left,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: colors.muted,
-                        letterSpacing: 0,
-                        fontWeight: FontWeight.w800,
-                      ),
+                  style: AppTextStyles.rank(colors.muted),
                 ),
               ),
               const SizedBox(width: 10),
@@ -77,7 +74,9 @@ class CoinListItem extends StatelessWidget {
                   iconSize: 18,
                   color: coin.isFavorite ? AppColors.positive : colors.muted,
                   icon: Icon(
-                    coin.isFavorite ? Icons.star : Icons.star_border,
+                    coin.isFavorite
+                        ? Icons.star_sharp
+                        : Icons.star_border_sharp,
                   ),
                 ),
               ),
@@ -92,12 +91,7 @@ class CoinListItem extends StatelessWidget {
                       CurrencyFormatter.marketPrice(coin.currentPrice),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: colors.primaryText,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0,
-                          ),
+                      style: AppTextStyles.listPrice(colors.primaryText),
                     ),
                     const SizedBox(height: 5),
                     _ChangeBadge(
@@ -135,24 +129,14 @@ class _CoinIdentity extends StatelessWidget {
           coin.name,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: colors.primaryText,
-                fontSize: 15,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0,
-              ),
+          style: AppTextStyles.coinName(colors.primaryText),
         ),
         const SizedBox(height: 3),
         Text(
           '${coin.symbol.toUpperCase()}  ·  ${CurrencyFormatter.compactUsd(coin.marketCap)}',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: colors.secondaryText,
-                fontSize: 11,
-                letterSpacing: 0.6,
-                fontWeight: FontWeight.w800,
-              ),
+          style: AppTextStyles.coinMeta(colors.secondaryText),
         ),
       ],
     );
@@ -184,12 +168,7 @@ class _ChangeBadge extends StatelessWidget {
         maxLines: 1,
         textAlign: TextAlign.center,
         overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontSize: 10,
-              letterSpacing: 0,
-              fontWeight: FontWeight.w900,
-            ),
+        style: AppTextStyles.percentageBadge(color),
       ),
     );
   }

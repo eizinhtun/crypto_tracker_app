@@ -1,5 +1,6 @@
 import 'package:crypto_tracker_app/core/localization/app_localizations.dart';
 import 'package:crypto_tracker_app/core/theme/app_colors.dart';
+import 'package:crypto_tracker_app/core/theme/app_text_styles.dart';
 import 'package:crypto_tracker_app/core/utils/currency_formatter.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/coin_detail.dart';
 import 'package:flutter/material.dart';
@@ -96,11 +97,7 @@ class DetailContent extends StatelessWidget {
         const SizedBox(height: 12),
         Text(
           descriptionText.isNotEmpty ? descriptionText : l10n.noDescription,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                height: 1.45,
-                fontWeight: FontWeight.w500,
-                color: colors.bodyText,
-              ),
+          style: AppTextStyles.body(colors.bodyText),
         ),
         if ((detail.homepage ?? '').isNotEmpty) ...[
           const SizedBox(height: 20),
@@ -108,11 +105,7 @@ class DetailContent extends StatelessWidget {
             l10n.sourceHost(_sourceHost(detail.homepage!)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  letterSpacing: 1.4,
-                  fontWeight: FontWeight.w700,
-                  color: colors.secondaryText,
-                ),
+            style: AppTextStyles.topMeta(colors.secondaryText),
           ),
         ],
       ],
@@ -168,22 +161,12 @@ class _PriceHeader extends StatelessWidget {
       children: [
         Text(
           name.toUpperCase(),
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                letterSpacing: 2,
-                fontWeight: FontWeight.w800,
-                color: colors.secondaryText,
-              ),
+          style: AppTextStyles.topMeta(colors.secondaryText),
         ),
         const SizedBox(height: 4),
         Text(
           price,
-          style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                fontSize: 36,
-                height: 1,
-                letterSpacing: 0,
-                color: colors.primaryText,
-              ),
+          style: AppTextStyles.heroPrice(colors.primaryText),
         ),
         const SizedBox(height: 6),
         Row(
@@ -196,19 +179,13 @@ class _PriceHeader extends StatelessWidget {
               ),
               child: Text(
                 '${isNegative ? '▼' : '▲'} $percentage',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: percentageColor,
-                      fontWeight: FontWeight.w800,
-                    ),
+                style: AppTextStyles.percentageBadge(percentageColor),
               ),
             ),
             const SizedBox(width: 8),
             Text(
               changeLabel,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: colors.secondaryText,
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: AppTextStyles.coinMeta(colors.secondaryText),
             ),
           ],
         ),
@@ -228,11 +205,7 @@ class _SectionTitle extends StatelessWidget {
 
     return Text(
       title,
-      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            letterSpacing: 2.2,
-            fontWeight: FontWeight.w800,
-            color: colors.secondaryText,
-          ),
+      style: AppTextStyles.sectionLabel(colors.secondaryText),
     );
   }
 }
@@ -299,22 +272,14 @@ class _StatCard extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: colors.secondaryText,
-                  letterSpacing: 1.4,
-                  fontWeight: FontWeight.w800,
-                ),
+            style: AppTextStyles.statLabel(colors.secondaryText),
           ),
           const SizedBox(height: 5),
           Text(
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: colors.primaryText,
-                  fontWeight: FontWeight.w900,
-                  height: 1.1,
-                ),
+            style: AppTextStyles.statValue(colors.primaryText),
           ),
           if (subValue != null) ...[
             const SizedBox(height: 1),
@@ -322,11 +287,9 @@ class _StatCard extends StatelessWidget {
               subValue!,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: subValueColor,
-                    fontWeight: FontWeight.w800,
-                    height: 1.1,
-                  ),
+              style: AppTextStyles.percentageBadge(
+                subValueColor ?? colors.secondaryText,
+              ),
             ),
           ],
         ],
@@ -352,7 +315,6 @@ class _DetailColors {
 
   static _DetailColors from(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return _DetailColors(
       card: isDark ? AppColors.darkCard : AppColors.lightCard,
       border: isDark ? AppColors.darkBorder : AppColors.lightBorder,

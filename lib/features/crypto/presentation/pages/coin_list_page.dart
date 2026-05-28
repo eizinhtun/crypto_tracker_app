@@ -6,6 +6,7 @@ import '../../../../core/constants/route_names.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/localization/locale_cubit.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../viewmodels/coin_list/coin_list_view_model.dart';
 import '../viewmodels/coin_list/coin_list_event.dart';
 import '../viewmodels/coin_list/coin_list_state.dart';
@@ -108,8 +109,11 @@ class _CoinListPageState extends State<CoinListPage> {
                   SliverToBoxAdapter(
                     child: CoinSearchBar(
                       initialValue: state.query,
-                      onChanged: (query) {
-                        _viewModel.add(CoinListSearchChanged(query));
+                      onSubmitted: (query) {
+                        _viewModel.add(CoinListSearchDebounced(query));
+                      },
+                      onCleared: () {
+                        _viewModel.add(const CoinListSearchDebounced(''));
                       },
                     ),
                   ),
@@ -206,24 +210,13 @@ class _MarketsHeader extends StatelessWidget {
                   '•  ${l10n.liveCoinGecko}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: colors.muted,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 2.4,
-                      ),
+                  style: AppTextStyles.topMeta(colors.muted),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   l10n.markets,
                   maxLines: 1,
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        color: colors.primaryText,
-                        fontSize: 38,
-                        fontWeight: FontWeight.w800,
-                        height: 1.02,
-                        letterSpacing: 0,
-                      ),
+                  style: AppTextStyles.pageTitle(colors.primaryText),
                 ),
               ],
             ),
@@ -268,12 +261,7 @@ class _CoinTableHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = _MarketsPageColors.from(context);
     final l10n = context.l10n;
-    final labelStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: colors.muted,
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 2.1,
-        );
+    final labelStyle = AppTextStyles.tableHeader(colors.muted);
 
     return Container(
       height: 38,

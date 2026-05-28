@@ -1,6 +1,7 @@
-import 'package:crypto_tracker_app/core/theme/app_colors.dart';
 import 'package:crypto_tracker_app/core/constants/route_names.dart';
 import 'package:crypto_tracker_app/core/localization/app_localizations.dart';
+import 'package:crypto_tracker_app/core/theme/app_colors.dart';
+import 'package:crypto_tracker_app/core/theme/app_text_styles.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/coin_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -38,16 +39,12 @@ class DetailTopBar extends StatelessWidget {
             child: Center(
               child: Text(
                 '${detail.symbol.toUpperCase()}  ·  ${l10n.rankLabel(rank)}',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
-                      color: secondaryText,
-                    ),
+                style: AppTextStyles.topMeta(secondaryText),
               ),
             ),
           ),
           _CircleIconButton(
-            icon: isFavorite ? Icons.star : Icons.star_border,
+            icon: isFavorite ? Icons.star_sharp : Icons.star_border_sharp,
             tooltip: isFavorite ? l10n.removeFavorite : l10n.addFavorite,
             onPressed: onFavoritePressed,
           ),

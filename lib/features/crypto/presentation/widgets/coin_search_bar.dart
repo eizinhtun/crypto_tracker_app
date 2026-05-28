@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
 
 class CoinSearchBar extends StatefulWidget {
   const CoinSearchBar({
-    required this.onChanged,
+    required this.onSubmitted,
+    required this.onCleared,
     this.initialValue = '',
     super.key,
   });
 
   final String initialValue;
-  final ValueChanged<String> onChanged;
+  final ValueChanged<String> onSubmitted;
+  final VoidCallback onCleared;
 
   @override
   State<CoinSearchBar> createState() => _CoinSearchBarState();
@@ -59,16 +62,10 @@ class _CoinSearchBarState extends State<CoinSearchBar> {
         child: TextField(
           controller: _controller,
           textInputAction: TextInputAction.search,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: textColor,
-                fontWeight: FontWeight.w700,
-              ),
+          style: AppTextStyles.searchHint(textColor),
           decoration: InputDecoration(
             hintText: l10n.searchHint,
-            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: mutedColor,
-                  fontWeight: FontWeight.w700,
-                ),
+            hintStyle: AppTextStyles.searchHint(mutedColor),
             prefixIcon: Icon(Icons.search, color: mutedColor, size: 21),
             suffixIcon: ValueListenableBuilder<TextEditingValue>(
               valueListenable: _controller,
@@ -81,7 +78,7 @@ class _CoinSearchBarState extends State<CoinSearchBar> {
                   tooltip: l10n.clearSearch,
                   onPressed: () {
                     _controller.clear();
-                    widget.onChanged('');
+                    widget.onCleared();
                   },
                   icon: Icon(Icons.close, color: mutedColor, size: 18),
                 );
@@ -99,7 +96,7 @@ class _CoinSearchBarState extends State<CoinSearchBar> {
               borderSide: BorderSide(color: mutedColor),
             ),
           ),
-          onChanged: widget.onChanged,
+          onSubmitted: widget.onSubmitted,
         ),
       ),
     );

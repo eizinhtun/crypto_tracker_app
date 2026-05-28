@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_text_styles.dart';
+
 class EmptyView extends StatelessWidget {
   const EmptyView({
     required this.message,
@@ -25,7 +27,9 @@ class EmptyView extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge,
+              style: AppTextStyles.body(
+                Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ],
         ),

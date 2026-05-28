@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/theme/app_text_styles.dart';
 
 class OfflineBanner extends StatelessWidget {
   const OfflineBanner({
@@ -32,7 +33,7 @@ class OfflineBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: TextStyle(color: colorScheme.onErrorContainer),
+              style: AppTextStyles.body(colorScheme.onErrorContainer),
             ),
           ),
         ],
