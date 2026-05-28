@@ -20,6 +20,11 @@ theme support, English/Myanmar language switching, tests, and GitHub Actions CI.
 - Light/dark theme via `ThemeMode.system`.
 - English/Myanmar in-app language toggle.
 
+## Screenshots
+
+Screenshots are not included in this repository yet. Add light and dark mode
+screenshots here before publishing a recruiter-facing or store-facing build.
+
 ## Tech Stack
 
 - Flutter

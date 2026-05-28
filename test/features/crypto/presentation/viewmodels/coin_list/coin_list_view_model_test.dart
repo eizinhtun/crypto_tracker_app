@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:crypto_tracker_app/core/constants/app_constants.dart';
 import 'package:crypto_tracker_app/core/error/failures.dart';
@@ -123,6 +125,56 @@ void main() {
         verifyNever(() => repository.searchCoins('bit'));
         verify(() => repository.searchCoins('bitcoin')).called(1);
       },
+    );
+
+    late Completer<Result<DataResult<List<Coin>>>> olderSearch;
+    late Completer<Result<DataResult<List<Coin>>>> newerSearch;
+
+    blocTest<CoinListViewModel, CoinListState>(
+      'Given older slower search finishes after newer search, then older result does not overwrite newer state',
+      build: () {
+        olderSearch = Completer<Result<DataResult<List<Coin>>>>();
+        newerSearch = Completer<Result<DataResult<List<Coin>>>>();
+        when(() => repository.searchCoins('ethereum')).thenAnswer(
+          (_) => olderSearch.future,
+        );
+        when(() => repository.searchCoins('bitcoin')).thenAnswer(
+          (_) => newerSearch.future,
+        );
+
+        return _createViewModel(repository);
+      },
+      act: (viewModel) async {
+        viewModel.add(const CoinListSearchDebounced('ethereum'));
+        await Future<void>.delayed(Duration.zero);
+
+        viewModel.add(const CoinListSearchDebounced('bitcoin'));
+        await Future<void>.delayed(Duration.zero);
+
+        final newerInvocation = verify(() => repository.searchCoins('bitcoin'));
+        newerInvocation.called(1);
+        newerSearch.complete(const Result.success(DataResult.remote(_coins)));
+        await Future<void>.delayed(Duration.zero);
+
+        final olderInvocation =
+            verify(() => repository.searchCoins('ethereum'));
+        olderInvocation.called(1);
+        olderSearch.complete(
+          const Result.success(DataResult.remote(_ethereumCoins)),
+        );
+      },
+      expect: () => [
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.loading)
+            .having((state) => state.query, 'query', 'ethereum'),
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.loading)
+            .having((state) => state.query, 'query', 'bitcoin'),
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.success)
+            .having((state) => state.query, 'query', 'bitcoin')
+            .having((state) => state.coins, 'coins', _coins),
+      ],
     );
 
     blocTest<CoinListViewModel, CoinListState>(
@@ -291,6 +343,10 @@ final _cachedAt = DateTime.utc(2026, 1, 1, 12);
 
 const _coins = [
   Coin(id: 'bitcoin', symbol: 'btc', name: 'Bitcoin'),
+];
+
+const _ethereumCoins = [
+  Coin(id: 'ethereum', symbol: 'eth', name: 'Ethereum'),
 ];
 
 const _trendingCoins = [
