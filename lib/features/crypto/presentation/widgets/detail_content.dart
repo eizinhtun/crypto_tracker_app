@@ -1,8 +1,10 @@
-import 'package:crypto_tracker_app/core/theme/app_colors.dart';
 import 'package:crypto_tracker_app/core/localization/app_localizations.dart';
+import 'package:crypto_tracker_app/core/theme/app_colors.dart';
 import 'package:crypto_tracker_app/core/utils/currency_formatter.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/coin_detail.dart';
 import 'package:flutter/material.dart';
+
+import 'coin_network_image.dart';
 
 class DetailContent extends StatelessWidget {
   const DetailContent({
@@ -28,7 +30,13 @@ class DetailContent extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            _CoinLogo(url: detail.image),
+            CoinNetworkImage(
+              url: detail.image,
+              size: 44,
+              iconSize: 36,
+              circular: false,
+              fit: BoxFit.contain,
+            ),
             const SizedBox(width: 16),
             Expanded(
               child: _PriceHeader(
@@ -44,15 +52,7 @@ class DetailContent extends StatelessWidget {
         const SizedBox(height: 30),
         _SectionTitle(l10n.marketStats),
         const SizedBox(height: 12),
-        GridView(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            mainAxisExtent: 88,
-          ),
+        _StatGrid(
           children: [
             _StatCard(
               label: l10n.marketCap,
@@ -140,33 +140,6 @@ class DetailContent extends StatelessWidget {
     }
 
     return host.startsWith('www.') ? host.substring(4) : host;
-  }
-}
-
-class _CoinLogo extends StatelessWidget {
-  const _CoinLogo({required this.url});
-
-  final String? url;
-
-  @override
-  Widget build(BuildContext context) {
-    if (url == null || url!.isEmpty) {
-      return const SizedBox(
-        width: 44,
-        height: 44,
-        child: Icon(Icons.currency_bitcoin, size: 36),
-      );
-    }
-
-    return Image.network(
-      url!,
-      width: 44,
-      height: 44,
-      fit: BoxFit.contain,
-      errorBuilder: (_, __, ___) {
-        return const Icon(Icons.currency_bitcoin, size: 40);
-      },
-    );
   }
 }
 
@@ -260,6 +233,36 @@ class _SectionTitle extends StatelessWidget {
             fontWeight: FontWeight.w800,
             color: colors.secondaryText,
           ),
+    );
+  }
+}
+
+class _StatGrid extends StatelessWidget {
+  const _StatGrid({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const spacing = 10.0;
+        const itemHeight = 88.0;
+        final itemWidth = (constraints.maxWidth - spacing) / 2;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: [
+            for (final child in children)
+              SizedBox(
+                width: itemWidth,
+                height: itemHeight,
+                child: child,
+              ),
+          ],
+        );
+      },
     );
   }
 }

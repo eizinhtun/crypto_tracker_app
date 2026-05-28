@@ -60,3 +60,12 @@ final class CoinListFavoriteToggled extends CoinListEvent {
   @override
   List<Object?> get props => [coinId];
 }
+
+final class CoinListFavoriteStatusRequested extends CoinListEvent {
+  const CoinListFavoriteStatusRequested(this.coinId);
+
+  final String coinId;
+
+  @override
+  List<Object?> get props => [coinId];
+}

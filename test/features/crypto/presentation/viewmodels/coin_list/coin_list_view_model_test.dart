@@ -7,6 +7,7 @@ import 'package:crypto_tracker_app/features/crypto/domain/entities/trending_coin
 import 'package:crypto_tracker_app/features/crypto/domain/repositories/crypto_repository.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/usecases/get_coins_usecase.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/usecases/get_crypto_overview_usecase.dart';
+import 'package:crypto_tracker_app/features/crypto/domain/usecases/get_favorite_status_usecase.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/usecases/search_coins_usecase.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/usecases/toggle_favorite_usecase.dart';
 import 'package:crypto_tracker_app/features/crypto/presentation/viewmodels/coin_list/coin_list_event.dart';
@@ -110,7 +111,37 @@ void main() {
     );
 
     blocTest<CoinListViewModel, CoinListState>(
-      'Given scroll threshold is reached, when scroll changes, then next page is requested',
+      'Given detail may have changed favorite status, when favorite status is requested, then local status updates the list',
+      build: () {
+        when(() => repository.isFavorite('bitcoin')).thenAnswer(
+          (_) async => const Result.success(true, source: ResultSource.local),
+        );
+        return _createViewModel(repository);
+      },
+      seed: () => CoinListState.initial().copyWith(
+        status: CoinListStatus.success,
+        coins: _coins,
+      ),
+      act: (viewModel) =>
+          viewModel.add(const CoinListFavoriteStatusRequested('bitcoin')),
+      expect: () => [
+        isA<CoinListState>()
+            .having((state) => state.coins.first.isFavorite, 'favorite', isTrue)
+            .having((state) => state.status, 'status', CoinListStatus.success),
+      ],
+      verify: (_) {
+        verify(() => repository.isFavorite('bitcoin')).called(1);
+        verifyNever(
+          () => repository.getCoins(
+            page: any(named: 'page'),
+            perPage: any(named: 'perPage'),
+          ),
+        );
+      },
+    );
+
+    blocTest<CoinListViewModel, CoinListState>(
+      'Given scroll threshold is reached repeatedly, when scroll changes, then one next page is requested',
       build: () {
         when(
           () => repository.getCoins(
@@ -131,12 +162,21 @@ void main() {
         coins: _coins,
         page: 1,
       ),
-      act: (viewModel) => viewModel.add(
-        const CoinListScrollChanged(
-          pixels: 700,
-          maxScrollExtent: 1000,
-        ),
-      ),
+      act: (viewModel) {
+        viewModel
+          ..add(
+            const CoinListScrollChanged(
+              pixels: 700,
+              maxScrollExtent: 1000,
+            ),
+          )
+          ..add(
+            const CoinListScrollChanged(
+              pixels: 720,
+              maxScrollExtent: 1000,
+            ),
+          );
+      },
       expect: () => [
         isA<CoinListState>().having(
           (state) => state.status,
@@ -164,6 +204,7 @@ CoinListViewModel _createViewModel(CryptoRepository repository) {
   return CoinListViewModel(
     getCoinsUseCase: GetCoinsUseCase(repository),
     getCryptoOverviewUseCase: GetCryptoOverviewUseCase(repository),
+    getFavoriteStatusUseCase: GetFavoriteStatusUseCase(repository),
     searchCoinsUseCase: SearchCoinsUseCase(repository),
     toggleFavoriteUseCase: ToggleFavoriteUseCase(repository),
   );

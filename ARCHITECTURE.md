@@ -19,8 +19,7 @@ Model      = domain entities, use cases, repositories, and data sources
 
 - View: `lib/features/crypto/presentation/pages` and
   `lib/features/crypto/presentation/widgets`.
-- ViewModel: `CoinListViewModel`, `CoinDetailViewModel`, and
-  `FavoriteViewModel`.
+- ViewModel: `CoinListViewModel` and `CoinDetailViewModel`.
 - Model: domain entities, repository contracts, repository implementations,
   remote data sources, local data sources, and DTOs.
 

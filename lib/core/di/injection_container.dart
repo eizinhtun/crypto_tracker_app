@@ -11,13 +11,10 @@ import '../../features/crypto/domain/usecases/get_coin_detail_usecase.dart';
 import '../../features/crypto/domain/usecases/get_coins_usecase.dart';
 import '../../features/crypto/domain/usecases/get_crypto_overview_usecase.dart';
 import '../../features/crypto/domain/usecases/get_favorite_status_usecase.dart';
-import '../../features/crypto/domain/usecases/get_global_market_usecase.dart';
-import '../../features/crypto/domain/usecases/get_trending_coins_usecase.dart';
 import '../../features/crypto/domain/usecases/search_coins_usecase.dart';
 import '../../features/crypto/domain/usecases/toggle_favorite_usecase.dart';
 import '../../features/crypto/presentation/viewmodels/coin_detail/coin_detail_view_model.dart';
 import '../../features/crypto/presentation/viewmodels/coin_list/coin_list_view_model.dart';
-import '../../features/crypto/presentation/viewmodels/favorite/favorite_view_model.dart';
 import '../../features/crypto/data/cache/crypto_cache_records.dart';
 import '../database/hive_boxes.dart';
 import '../network/dio_client.dart';
@@ -79,8 +76,6 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton(() => GetCoinsUseCase(sl()))
     ..registerLazySingleton(() => GetCoinDetailUseCase(sl()))
     ..registerLazySingleton(() => GetCryptoOverviewUseCase(sl()))
-    ..registerLazySingleton(() => GetTrendingCoinsUseCase(sl()))
-    ..registerLazySingleton(() => GetGlobalMarketUseCase(sl()))
     ..registerLazySingleton(() => SearchCoinsUseCase(sl()))
     ..registerLazySingleton(() => ToggleFavoriteUseCase(sl()))
     ..registerLazySingleton(() => GetFavoriteStatusUseCase(sl()))
@@ -88,6 +83,7 @@ Future<void> configureDependencies() async {
       () => CoinListViewModel(
         getCoinsUseCase: sl(),
         getCryptoOverviewUseCase: sl(),
+        getFavoriteStatusUseCase: sl(),
         searchCoinsUseCase: sl(),
         toggleFavoriteUseCase: sl(),
       ),
@@ -95,12 +91,6 @@ Future<void> configureDependencies() async {
     ..registerFactory(
       () => CoinDetailViewModel(
         getCoinDetailUseCase: sl(),
-        getFavoriteStatusUseCase: sl(),
-        toggleFavoriteUseCase: sl(),
-      ),
-    )
-    ..registerFactory(
-      () => FavoriteViewModel(
         getFavoriteStatusUseCase: sl(),
         toggleFavoriteUseCase: sl(),
       ),

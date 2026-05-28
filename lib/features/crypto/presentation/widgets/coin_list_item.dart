@@ -4,6 +4,7 @@ import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../domain/entities/coin.dart';
+import 'coin_network_image.dart';
 
 class CoinListItem extends StatelessWidget {
   const CoinListItem({
@@ -56,7 +57,11 @@ class CoinListItem extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              _CoinImage(url: coin.image),
+              CoinNetworkImage(
+                url: coin.image,
+                size: 38,
+                iconSize: 20,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: _CoinIdentity(coin: coin, colors: colors),
@@ -185,35 +190,6 @@ class _ChangeBadge extends StatelessWidget {
               letterSpacing: 0,
               fontWeight: FontWeight.w900,
             ),
-      ),
-    );
-  }
-}
-
-class _CoinImage extends StatelessWidget {
-  const _CoinImage({required this.url});
-
-  final String? url;
-
-  @override
-  Widget build(BuildContext context) {
-    if (url == null || url!.isEmpty) {
-      return const SizedBox(
-        width: 38,
-        height: 38,
-        child: CircleAvatar(child: Icon(Icons.currency_bitcoin, size: 20)),
-      );
-    }
-
-    return ClipOval(
-      child: Image.network(
-        url!,
-        width: 38,
-        height: 38,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) {
-          return const CircleAvatar(child: Icon(Icons.currency_bitcoin));
-        },
       ),
     );
   }

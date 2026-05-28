@@ -65,6 +65,34 @@ void main() {
             .having((state) => state.isFavorite, 'isFavorite', isTrue),
       ],
     );
+
+    blocTest<CoinDetailViewModel, CoinDetailState>(
+      'Given detail already loaded, when same coin is requested again, then repository is not called twice',
+      build: () {
+        _stubDetail(repository, source: ResultSource.remote);
+        _stubFavorite(repository, isFavorite: false);
+        return _createViewModel(repository);
+      },
+      act: (viewModel) {
+        viewModel
+          ..add(const CoinDetailRequested('bitcoin'))
+          ..add(const CoinDetailRequested('bitcoin'));
+      },
+      expect: () => [
+        isA<CoinDetailState>().having(
+          (state) => state.status,
+          'status',
+          CoinDetailStatus.loading,
+        ),
+        isA<CoinDetailState>()
+            .having((state) => state.status, 'status', CoinDetailStatus.success)
+            .having((state) => state.detail?.id, 'detail id', 'bitcoin'),
+      ],
+      verify: (_) {
+        verify(() => repository.getCoinDetail('bitcoin')).called(1);
+        verify(() => repository.isFavorite('bitcoin')).called(1);
+      },
+    );
   });
 }
 

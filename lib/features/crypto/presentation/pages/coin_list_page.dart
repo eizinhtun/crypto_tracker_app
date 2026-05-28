@@ -151,7 +151,7 @@ class _CoinListPageState extends State<CoinListPage> {
                                 return;
                               }
                               _viewModel.add(
-                                const CoinListRefreshRequested(),
+                                CoinListFavoriteStatusRequested(coin.id),
                               );
                             },
                             onFavoritePressed: () {

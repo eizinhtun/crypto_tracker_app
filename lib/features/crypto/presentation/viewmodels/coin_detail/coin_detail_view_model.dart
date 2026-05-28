@@ -28,42 +28,57 @@ class CoinDetailViewModel extends Bloc<CoinDetailEvent, CoinDetailState> {
   final ToggleFavoriteUseCase toggleFavoriteUseCase;
 
   String? _coinId;
+  bool _isLoadingDetail = false;
+  bool _isTogglingFavorite = false;
 
   Future<void> _onRequested(
     CoinDetailRequested event,
     Emitter<CoinDetailState> emit,
   ) async {
-    _coinId = event.coinId;
+    final coinId = event.coinId.trim();
+    final hasLoadedCoin =
+        state.status == CoinDetailStatus.success && state.detail?.id == coinId;
+
+    if (_isLoadingDetail || (_coinId == coinId && hasLoadedCoin)) {
+      return;
+    }
+
+    _coinId = coinId;
+    _isLoadingDetail = true;
     emit(state.copyWith(status: CoinDetailStatus.loading, clearError: true));
 
-    final detailResult = await getCoinDetailUseCase(event.coinId);
-    final favoriteResult = await getFavoriteStatusUseCase(event.coinId);
-    final isFavorite = switch (favoriteResult) {
-      Success<bool>(value: final value) => value,
-      Error<bool>() => false,
-    };
+    try {
+      final detailResult = await getCoinDetailUseCase(coinId);
+      final favoriteResult = await getFavoriteStatusUseCase(coinId);
+      final isFavorite = switch (favoriteResult) {
+        Success<bool>(value: final value) => value,
+        Error<bool>() => false,
+      };
 
-    switch (detailResult) {
-      case Success(value: final detailResult):
-        final detail = detailResult.data;
-        emit(
-          state.copyWith(
-            status: CoinDetailStatus.success,
-            detail: detail,
-            descriptionText: HtmlTextFormatter.plainText(detail.description),
-            isFavorite: isFavorite,
-            isOffline: detailResult.isFromCache,
-            clearError: true,
-          ),
-        );
-      case Error(failure: final failure):
-        emit(
-          state.copyWith(
-            status: CoinDetailStatus.failure,
-            isFavorite: isFavorite,
-            errorMessage: failure.message,
-          ),
-        );
+      switch (detailResult) {
+        case Success(value: final detailResult):
+          final detail = detailResult.data;
+          emit(
+            state.copyWith(
+              status: CoinDetailStatus.success,
+              detail: detail,
+              descriptionText: HtmlTextFormatter.plainText(detail.description),
+              isFavorite: isFavorite,
+              isOffline: detailResult.isFromCache,
+              clearError: true,
+            ),
+          );
+        case Error(failure: final failure):
+          emit(
+            state.copyWith(
+              status: CoinDetailStatus.failure,
+              isFavorite: isFavorite,
+              errorMessage: failure.message,
+            ),
+          );
+      }
+    } finally {
+      _isLoadingDetail = false;
     }
   }
 
@@ -76,13 +91,22 @@ class CoinDetailViewModel extends Bloc<CoinDetailEvent, CoinDetailState> {
       return;
     }
 
-    final result = await toggleFavoriteUseCase(coinId);
+    if (_isTogglingFavorite) {
+      return;
+    }
 
-    switch (result) {
-      case Success<bool>(value: final isFavorite):
-        emit(state.copyWith(isFavorite: isFavorite, clearError: true));
-      case Error<bool>(failure: final failure):
-        emit(state.copyWith(errorMessage: failure.message));
+    _isTogglingFavorite = true;
+    try {
+      final result = await toggleFavoriteUseCase(coinId);
+
+      switch (result) {
+        case Success<bool>(value: final isFavorite):
+          emit(state.copyWith(isFavorite: isFavorite, clearError: true));
+        case Error<bool>(failure: final failure):
+          emit(state.copyWith(errorMessage: failure.message));
+      }
+    } finally {
+      _isTogglingFavorite = false;
     }
   }
 }

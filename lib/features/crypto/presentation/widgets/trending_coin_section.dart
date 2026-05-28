@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/trending_coin.dart';
+import 'coin_network_image.dart';
 
 class TrendingCoinSection extends StatelessWidget {
   const TrendingCoinSection({
@@ -97,7 +98,11 @@ class _TrendingCoinCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              _CoinImage(url: coin.smallImage),
+              CoinNetworkImage(
+                url: coin.smallImage,
+                size: 32,
+                iconSize: 18,
+              ),
               const SizedBox(width: 9),
               Expanded(
                 child: Column(
@@ -202,35 +207,6 @@ class _ScoreBadge extends StatelessWidget {
               letterSpacing: 0,
               fontWeight: FontWeight.w900,
             ),
-      ),
-    );
-  }
-}
-
-class _CoinImage extends StatelessWidget {
-  const _CoinImage({required this.url});
-
-  final String? url;
-
-  @override
-  Widget build(BuildContext context) {
-    if (url == null || url!.isEmpty) {
-      return const SizedBox(
-        width: 32,
-        height: 32,
-        child: CircleAvatar(child: Icon(Icons.currency_bitcoin, size: 18)),
-      );
-    }
-
-    return ClipOval(
-      child: Image.network(
-        url!,
-        width: 32,
-        height: 32,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) {
-          return const CircleAvatar(child: Icon(Icons.currency_bitcoin));
-        },
       ),
     );
   }
