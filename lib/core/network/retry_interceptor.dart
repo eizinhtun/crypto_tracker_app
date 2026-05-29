@@ -7,6 +7,7 @@ class RetryInterceptor extends Interceptor {
     required this.dio,
     this.maxRetries = 2,
     this.baseDelay = const Duration(milliseconds: 300),
+    this.maxDelay = const Duration(seconds: 10),
   });
 
   static const _retryAttemptKey = 'retry_attempt';
@@ -14,6 +15,7 @@ class RetryInterceptor extends Interceptor {
   final Dio dio;
   final int maxRetries;
   final Duration baseDelay;
+  final Duration maxDelay;
 
   @override
   Future<void> onError(
@@ -25,11 +27,13 @@ class RetryInterceptor extends Interceptor {
     while (_shouldRetry(error)) {
       final attempt =
           (error.requestOptions.extra[_retryAttemptKey] as int?) ?? 0;
+
       if (attempt >= maxRetries) {
         break;
       }
 
       error.requestOptions.extra[_retryAttemptKey] = attempt + 1;
+
       await Future<void>.delayed(_delayFor(error, attempt));
 
       try {
@@ -66,11 +70,21 @@ class RetryInterceptor extends Interceptor {
 
   Duration _delayFor(DioException err, int attempt) {
     final retryAfter = _retryAfter(err.response?.headers);
+
     if (retryAfter != null) {
-      return retryAfter;
+      return _capDelay(retryAfter);
     }
 
-    return baseDelay * (attempt + 1);
+    final calculatedDelay = baseDelay * (attempt + 1);
+    return _capDelay(calculatedDelay);
+  }
+
+  Duration _capDelay(Duration delay) {
+    if (delay > maxDelay) {
+      return maxDelay;
+    }
+
+    return delay;
   }
 
   Duration? _retryAfter(Headers? headers) {
