@@ -78,7 +78,8 @@ CoinGecko integration is isolated in `CryptoRemoteDataSource` behind
 - `/global`
 - `/search/trending`
 - `/coins/{id}`
-- `/search` followed by `/coins/markets?ids=...` for complete search rows
+- `/search` for submitted search queries, parsed directly to avoid extra
+  CoinGecko calls
 
 `DioClient` owns:
 
@@ -116,9 +117,11 @@ Successful API responses are cached in typed Hive records:
 
 When the remote request fails or the device is offline, the repository returns
 cached data if available and marks the result as `ResultSource.cache`. ViewModels
-translate that metadata into `isOffline`, so the UI can show an offline banner
-while still rendering cached data. Expired cache is invalidated on normal reads,
-but stale cache is allowed only as an explicit offline/failure fallback.
+translate required list/detail cache into `isOffline` and any cached overview
+fallback into `hasCachedData`, so the UI can show cached-data messaging without
+mislabeling every optional fallback as offline. Expired cache is invalidated on
+normal reads, but stale cache is allowed only as an explicit offline/failure
+fallback.
 
 ## Dependency Injection
 
@@ -142,7 +145,8 @@ uppercase section labels, and premium spacing.
 
 Localization supports English and Myanmar. User-facing labels for search,
 retry, no-data, offline, market stats, about, favorites, and loading/error
-states are centralized in `core/localization` and mirrored in ARB files.
+states are centralized in `core/localization` and mirrored in ARB files. The
+selected locale is persisted in Hive so language choice survives restart.
 
 ## Testing Strategy
 

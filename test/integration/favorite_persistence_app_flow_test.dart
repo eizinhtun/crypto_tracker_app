@@ -22,7 +22,10 @@ import 'package:crypto_tracker_app/features/crypto/domain/usecases/get_crypto_ov
 import 'package:crypto_tracker_app/features/crypto/domain/usecases/get_favorite_status_usecase.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/usecases/search_coins_usecase.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/usecases/toggle_favorite_usecase.dart';
+import 'package:crypto_tracker_app/features/crypto/presentation/pages/coin_detail_page.dart';
 import 'package:crypto_tracker_app/features/crypto/presentation/pages/coin_list_page.dart';
+import 'package:crypto_tracker_app/features/crypto/presentation/viewmodels/coin_detail/coin_detail_event.dart';
+import 'package:crypto_tracker_app/features/crypto/presentation/viewmodels/coin_detail/coin_detail_state.dart';
 import 'package:crypto_tracker_app/features/crypto/presentation/viewmodels/coin_list/coin_list_event.dart';
 import 'package:crypto_tracker_app/features/crypto/presentation/viewmodels/coin_detail/coin_detail_view_model.dart';
 import 'package:crypto_tracker_app/features/crypto/presentation/viewmodels/coin_list/coin_list_state.dart';
@@ -100,6 +103,55 @@ void main() {
       expect(find.byIcon(Icons.star_sharp), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'Given detail favorite is saved, when app restarts offline, then cached detail remains selected',
+    (tester) async {
+      final networkInfo = _MutableNetworkInfo(isConnected: true);
+
+      _registerAppDependencies(
+        networkInfo: networkInfo,
+        remoteDataSource: const _FakeRemoteDataSource(),
+      );
+      final firstViewModel = await _createLoadedDetailViewModel(tester);
+      addTearDown(firstViewModel.close);
+      await tester.pumpWidget(_TestDetailApp(viewModel: firstViewModel));
+      await tester.pump();
+
+      expect(firstViewModel.state.detail?.id, 'bitcoin');
+      expect(find.byIcon(Icons.star_border_sharp), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.star_border_sharp));
+      await _waitForDetailFavoriteState(
+        tester,
+        firstViewModel,
+        isFavorite: true,
+      );
+      await tester.pump();
+
+      expect(find.byIcon(Icons.star_sharp), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await resetDependencies(dispose: false);
+
+      networkInfo.connected = false;
+      _registerAppDependencies(
+        networkInfo: networkInfo,
+        remoteDataSource: const _FailingRemoteDataSource(),
+      );
+      final restartedViewModel = await _createLoadedDetailViewModel(tester);
+      addTearDown(restartedViewModel.close);
+      await tester.pumpWidget(_TestDetailApp(viewModel: restartedViewModel));
+      await tester.pump();
+
+      expect(restartedViewModel.state.isOffline, isTrue);
+      expect(restartedViewModel.state.hasCachedData, isTrue);
+      expect(restartedViewModel.state.isFavorite, isTrue);
+      expect(find.textContaining('Showing cached data'), findsOneWidget);
+      expect(find.byIcon(Icons.star_sharp), findsOneWidget);
+    },
+  );
 }
 
 Future<CoinListViewModel> _createLoadedViewModel(WidgetTester tester) async {
@@ -132,6 +184,38 @@ Future<CoinListViewModel> _createLoadedViewModel(WidgetTester tester) async {
   return viewModel;
 }
 
+Future<CoinDetailViewModel> _createLoadedDetailViewModel(
+  WidgetTester tester,
+) async {
+  late CoinDetailViewModel viewModel;
+
+  await tester.runAsync(() async {
+    viewModel = sl<CoinDetailViewModel>();
+    final loadedState = viewModel.stream.firstWhere(
+      (state) =>
+          state.status == CoinDetailStatus.success && state.detail != null,
+    );
+    viewModel.add(const CoinDetailRequested('bitcoin'));
+    await loadedState.timeout(const Duration(seconds: 3));
+  });
+  await tester.pump();
+
+  final exception = tester.takeException();
+  if (exception != null) {
+    throw exception;
+  }
+
+  if (viewModel.state.status != CoinDetailStatus.success ||
+      viewModel.state.detail == null) {
+    fail(
+      'Expected loaded detail, but state was '
+      '${viewModel.state.status} with ${viewModel.state.detail?.id}.',
+    );
+  }
+
+  return viewModel;
+}
+
 Future<void> _waitForFavoriteState(
   WidgetTester tester,
   CoinListViewModel viewModel, {
@@ -142,6 +226,18 @@ Future<void> _waitForFavoriteState(
         .firstWhere(
           (state) => state.coins.any((coin) => coin.isFavorite == isFavorite),
         )
+        .timeout(const Duration(seconds: 3));
+  });
+}
+
+Future<void> _waitForDetailFavoriteState(
+  WidgetTester tester,
+  CoinDetailViewModel viewModel, {
+  required bool isFavorite,
+}) async {
+  await tester.runAsync(() async {
+    await viewModel.stream
+        .firstWhere((state) => state.isFavorite == isFavorite)
         .timeout(const Duration(seconds: 3));
   });
 }
@@ -157,6 +253,24 @@ Future<void> _scrollUntilFound(WidgetTester tester, Finder finder) async {
     scrollable: find.byType(Scrollable).first,
   );
   await tester.pump();
+}
+
+class _TestDetailApp extends StatelessWidget {
+  const _TestDetailApp({required this.viewModel});
+
+  final CoinDetailViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      home: BlocProvider.value(
+        value: viewModel,
+        child: const CoinDetailPage(coinId: 'bitcoin'),
+      ),
+    );
+  }
 }
 
 class _TestMarketsApp extends StatelessWidget {

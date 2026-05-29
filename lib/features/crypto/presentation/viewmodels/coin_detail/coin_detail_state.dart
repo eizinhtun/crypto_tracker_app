@@ -15,6 +15,7 @@ class CoinDetailState extends Equatable {
     required this.status,
     required this.isFavorite,
     required this.isOffline,
+    this.hasCachedData = false,
     this.detail,
     this.descriptionText = '',
     this.failureCategory,
@@ -34,6 +35,7 @@ class CoinDetailState extends Equatable {
   final String descriptionText;
   final bool isFavorite;
   final bool isOffline;
+  final bool hasCachedData;
   final FailureCategory? failureCategory;
   final DateTime? lastUpdated;
 
@@ -43,6 +45,7 @@ class CoinDetailState extends Equatable {
     String? descriptionText,
     bool? isFavorite,
     bool? isOffline,
+    bool? hasCachedData,
     FailureCategory? failureCategory,
     DateTime? lastUpdated,
     bool clearFailure = false,
@@ -54,6 +57,7 @@ class CoinDetailState extends Equatable {
       descriptionText: descriptionText ?? this.descriptionText,
       isFavorite: isFavorite ?? this.isFavorite,
       isOffline: isOffline ?? this.isOffline,
+      hasCachedData: hasCachedData ?? this.hasCachedData,
       failureCategory:
           clearFailure ? null : failureCategory ?? this.failureCategory,
       lastUpdated: clearLastUpdated ? null : lastUpdated ?? this.lastUpdated,
@@ -67,6 +71,7 @@ class CoinDetailState extends Equatable {
         descriptionText,
         isFavorite,
         isOffline,
+        hasCachedData,
         failureCategory,
         lastUpdated,
       ];

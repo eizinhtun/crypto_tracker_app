@@ -23,6 +23,7 @@ class CoinListState extends Equatable {
     required this.hasReachedMax,
     required this.query,
     required this.isOffline,
+    this.hasCachedData = false,
     this.globalMarket,
     this.failureCategory,
     this.transientFailureCategory,
@@ -49,6 +50,7 @@ class CoinListState extends Equatable {
   final bool hasReachedMax;
   final String query;
   final bool isOffline;
+  final bool hasCachedData;
   final FailureCategory? failureCategory;
   final FailureCategory? transientFailureCategory;
   final DateTime? lastUpdated;
@@ -62,6 +64,7 @@ class CoinListState extends Equatable {
     bool? hasReachedMax,
     String? query,
     bool? isOffline,
+    bool? hasCachedData,
     FailureCategory? failureCategory,
     FailureCategory? transientFailureCategory,
     DateTime? lastUpdated,
@@ -80,6 +83,7 @@ class CoinListState extends Equatable {
       hasReachedMax: hasReachedMax ?? this.hasReachedMax,
       query: query ?? this.query,
       isOffline: isOffline ?? this.isOffline,
+      hasCachedData: hasCachedData ?? this.hasCachedData,
       failureCategory:
           clearFailure ? null : failureCategory ?? this.failureCategory,
       transientFailureCategory: clearTransientFailure
@@ -99,6 +103,7 @@ class CoinListState extends Equatable {
         hasReachedMax,
         query,
         isOffline,
+        hasCachedData,
         failureCategory,
         transientFailureCategory,
         lastUpdated,

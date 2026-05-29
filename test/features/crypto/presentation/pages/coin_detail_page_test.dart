@@ -1,3 +1,4 @@
+import 'package:crypto_tracker_app/core/localization/app_localizations.dart';
 import 'package:crypto_tracker_app/core/error/failures.dart';
 import 'package:crypto_tracker_app/core/error/result.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/coin.dart';
@@ -50,6 +51,40 @@ void main() {
 
       expect(repository.detailRequests, ['bitcoin', 'bitcoin']);
       expect(find.text('BITCOIN'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Given Myanmar locale, when detail load fails, then native error and retry labels are shown',
+    (tester) async {
+      final repository = _RetryCryptoRepository();
+      final viewModel = CoinDetailViewModel(
+        getCoinDetailUseCase: GetCoinDetailUseCase(repository),
+        getFavoriteStatusUseCase: GetFavoriteStatusUseCase(repository),
+        toggleFavoriteUseCase: ToggleFavoriteUseCase(repository),
+      );
+      addTearDown(viewModel.close);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('my'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: BlocProvider.value(
+            value: viewModel,
+            child: const CoinDetailPage(coinId: 'bitcoin'),
+          ),
+        ),
+      );
+
+      viewModel.add(const CoinDetailRequested('bitcoin'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('အချက်အလက် မရယူနိုင်ပါ။ ထပ်မံကြိုးစားပါ။'),
+        findsOneWidget,
+      );
+      expect(find.text('ထပ်မံကြိုးစားမည်'), findsOneWidget);
     },
   );
 }

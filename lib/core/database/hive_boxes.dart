@@ -4,4 +4,5 @@ abstract final class HiveBoxes {
   static const trending = 'trending_box';
   static const globalMarket = 'global_market_box';
   static const favorites = 'favorites_box';
+  static const settings = 'settings_box';
 }

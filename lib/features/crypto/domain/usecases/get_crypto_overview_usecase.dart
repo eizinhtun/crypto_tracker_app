@@ -37,7 +37,7 @@ class GetCryptoOverviewUseCase {
           Success(value: final value) => value,
           Error() => null,
         };
-        final isFromCache = coinsDataResult.isFromCache ||
+        final hasCachedData = coinsDataResult.isFromCache ||
             (trendingDataResult?.isFromCache ?? false) ||
             (marketDataResult?.isFromCache ?? false);
         final lastUpdated = _latestDate([
@@ -66,9 +66,12 @@ class GetCryptoOverviewUseCase {
                 if (marketResult case Error(failure: final failure))
                   failure.category,
               ],
+              hasCachedData: hasCachedData,
             ),
-            source: isFromCache ? ResultSource.cache : ResultSource.remote,
-            lastUpdated: isFromCache ? lastUpdated : null,
+            source: coinsDataResult.isFromCache
+                ? ResultSource.cache
+                : ResultSource.remote,
+            lastUpdated: hasCachedData ? lastUpdated : null,
           ),
         );
       case Error(failure: final failure):

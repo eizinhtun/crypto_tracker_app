@@ -41,7 +41,8 @@ void main() {
               'descriptionText',
               'Bitcoin & Ethereum',
             )
-            .having((state) => state.isOffline, 'isOffline', isFalse),
+            .having((state) => state.isOffline, 'isOffline', isFalse)
+            .having((state) => state.hasCachedData, 'hasCachedData', isFalse),
       ],
     );
 
@@ -62,6 +63,7 @@ void main() {
         isA<CoinDetailState>()
             .having((state) => state.status, 'status', CoinDetailStatus.success)
             .having((state) => state.isOffline, 'isOffline', isTrue)
+            .having((state) => state.hasCachedData, 'hasCachedData', isTrue)
             .having((state) => state.isFavorite, 'isFavorite', isTrue)
             .having((state) => state.lastUpdated, 'lastUpdated', _cachedAt),
       ],

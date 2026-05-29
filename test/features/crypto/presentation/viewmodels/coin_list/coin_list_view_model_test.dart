@@ -40,7 +40,8 @@ void main() {
         isA<CoinListState>()
             .having((state) => state.status, 'status', CoinListStatus.success)
             .having((state) => state.coins.first.id, 'first coin id', 'bitcoin')
-            .having((state) => state.isOffline, 'isOffline', isFalse),
+            .having((state) => state.isOffline, 'isOffline', isFalse)
+            .having((state) => state.hasCachedData, 'hasCachedData', isFalse),
       ],
       verify: (_) {
         verify(
@@ -66,6 +67,40 @@ void main() {
             .having((state) => state.status, 'status', CoinListStatus.success)
             .having((state) => state.coins.first.id, 'first coin id', 'bitcoin')
             .having((state) => state.isOffline, 'isOffline', isTrue)
+            .having((state) => state.hasCachedData, 'hasCachedData', isTrue)
+            .having((state) => state.lastUpdated, 'lastUpdated', _cachedAt),
+      ],
+    );
+
+    blocTest<CoinListViewModel, CoinListState>(
+      'Given optional overview cache is used with remote list data, when started, then cached metadata does not mark list offline',
+      build: () {
+        when(
+          () => repository.getCoins(
+            page: AppConstants.firstPage,
+            perPage: AppConstants.defaultPageSize,
+          ),
+        ).thenAnswer(
+          (_) async => const Result.success(DataResult.remote(_coins)),
+        );
+        when(() => repository.getTrendingCoins()).thenAnswer(
+          (_) async => Result.success(
+            DataResult.cache(_trendingCoins, lastUpdated: _cachedAt),
+          ),
+        );
+        when(() => repository.getGlobalMarket()).thenAnswer(
+          (_) async => const Result.success(DataResult.remote(_globalMarket)),
+        );
+        return _createViewModel(repository);
+      },
+      act: (viewModel) => viewModel.add(const CoinListStarted()),
+      expect: () => [
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.loading),
+        isA<CoinListState>()
+            .having((state) => state.status, 'status', CoinListStatus.success)
+            .having((state) => state.isOffline, 'isOffline', isFalse)
+            .having((state) => state.hasCachedData, 'hasCachedData', isTrue)
             .having((state) => state.lastUpdated, 'lastUpdated', _cachedAt),
       ],
     );

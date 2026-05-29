@@ -106,6 +106,7 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
         status: isRefresh ? CoinListStatus.refreshing : CoinListStatus.loading,
         query: '',
         isOffline: false,
+        hasCachedData: false,
         clearFailure: true,
         clearTransientFailure: true,
         clearLastUpdated: true,
@@ -131,11 +132,12 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
               page: overview.page,
               hasReachedMax: overview.hasReachedMax,
               isOffline: overviewResult.isFromCache,
+              hasCachedData: overview.hasCachedData,
               lastUpdated: overviewResult.lastUpdated,
               clearFailure: true,
               transientFailureCategory: warningCategory,
               clearTransientFailure: warningCategory == null,
-              clearLastUpdated: !overviewResult.isFromCache,
+              clearLastUpdated: !overview.hasCachedData,
             ),
           );
         case Error(failure: final failure):
@@ -198,11 +200,13 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
               page: nextPage,
               hasReachedMax:
                   coins.length < AppConstants.defaultPageSize || hasNoNewCoins,
-              isOffline: coinsResult.isFromCache,
-              lastUpdated: coinsResult.lastUpdated,
+              isOffline: state.isOffline || coinsResult.isFromCache,
+              hasCachedData: state.hasCachedData || coinsResult.isFromCache,
+              lastUpdated: coinsResult.lastUpdated ?? state.lastUpdated,
               clearFailure: true,
               clearTransientFailure: true,
-              clearLastUpdated: !coinsResult.isFromCache,
+              clearLastUpdated:
+                  !(state.hasCachedData || coinsResult.isFromCache),
             ),
           );
         case Error<DataResult<List<Coin>>>(failure: final failure):
@@ -270,6 +274,7 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
         coins: const [],
         hasReachedMax: true,
         isOffline: false,
+        hasCachedData: false,
         clearFailure: true,
         clearTransientFailure: true,
         clearLastUpdated: true,
@@ -291,6 +296,7 @@ class CoinListViewModel extends Bloc<CoinListEvent, CoinListState> {
             coins: coins,
             hasReachedMax: true,
             isOffline: coinsResult.isFromCache,
+            hasCachedData: coinsResult.isFromCache,
             lastUpdated: coinsResult.lastUpdated,
             clearFailure: true,
             clearTransientFailure: true,

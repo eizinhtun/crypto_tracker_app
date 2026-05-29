@@ -92,6 +92,31 @@ void main() {
           fail(failure.message);
       }
     });
+
+    test(
+        'preserves remote source when only optional overview data comes from cache',
+        () async {
+      final repository = _FakeCryptoRepository();
+      repository.trendingResult = Result.success(
+        DataResult.cache(
+          repository.trendingCoins,
+          lastUpdated: DateTime.utc(2026, 1, 1),
+        ),
+      );
+      final useCase = GetCryptoOverviewUseCase(repository);
+
+      final result = await useCase();
+
+      switch (result) {
+        case Success(value: final overviewResult):
+          expect(overviewResult.source, ResultSource.remote);
+          expect(overviewResult.isFromCache, isFalse);
+          expect(overviewResult.data.hasCachedData, isTrue);
+          expect(overviewResult.lastUpdated, DateTime.utc(2026, 1, 1));
+        case Error(failure: final failure):
+          fail(failure.message);
+      }
+    });
   });
 }
 

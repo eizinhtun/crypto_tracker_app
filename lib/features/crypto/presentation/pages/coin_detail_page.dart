@@ -78,7 +78,7 @@ class _CoinDetailView extends StatelessWidget {
                                 .add(const CoinDetailFavoriteToggled());
                           },
                         ),
-                        if (state.isOffline)
+                        if (state.hasCachedData)
                           OfflineBanner(lastUpdated: state.lastUpdated),
                         Expanded(
                           child: DetailContent(

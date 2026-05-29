@@ -23,6 +23,7 @@ abstract final class HiveInitializer {
       _openCacheBox<TrendingCoinsCacheRecord>(HiveBoxes.trending),
       _openCacheBox<GlobalMarketCacheRecord>(HiveBoxes.globalMarket),
       _openBoolBox(HiveBoxes.favorites),
+      _openStringBox(HiveBoxes.settings),
     ]);
   }
 
@@ -48,6 +49,13 @@ abstract final class HiveInitializer {
     return _openTypedBox<bool>(
       name,
       isValidValue: (value) => value is bool,
+    );
+  }
+
+  static Future<Box<String>> _openStringBox(String name) async {
+    return _openTypedBox<String>(
+      name,
+      isValidValue: (value) => value is String,
     );
   }
 

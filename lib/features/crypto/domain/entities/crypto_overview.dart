@@ -14,6 +14,7 @@ class CryptoOverview extends Equatable {
     this.globalMarket,
     this.warnings = const [],
     this.warningCategories = const [],
+    this.hasCachedData = false,
   });
 
   final List<Coin> coins;
@@ -23,6 +24,7 @@ class CryptoOverview extends Equatable {
   final int perPage;
   final List<String> warnings;
   final List<FailureCategory> warningCategories;
+  final bool hasCachedData;
 
   bool get hasReachedMax => coins.length < perPage;
 
@@ -35,5 +37,6 @@ class CryptoOverview extends Equatable {
         perPage,
         warnings,
         warningCategories,
+        hasCachedData,
       ];
 }

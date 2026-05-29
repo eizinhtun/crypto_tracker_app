@@ -1,3 +1,4 @@
+import 'package:crypto_tracker_app/core/localization/app_localizations.dart';
 import 'package:crypto_tracker_app/core/theme/app_theme.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/coin_detail.dart';
 import 'package:crypto_tracker_app/features/crypto/presentation/widgets/detail_content.dart';
@@ -45,6 +46,43 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('MARKET STATS'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Given Myanmar locale, when detail content renders, then native labels are shown',
+    (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          locale: Locale('my'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: Scaffold(
+            body: SizedBox.expand(
+              child: DetailContent(
+                detail: CoinDetail(
+                  id: 'ethereum',
+                  symbol: 'eth',
+                  name: 'Ethereum',
+                  currentPrice: 2095.85,
+                  marketCap: 253150000000,
+                  totalVolume: 9780000000,
+                  maxSupply: null,
+                  homepage: 'https://ethereum.org/',
+                ),
+                descriptionText: '',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      expect(find.text('စျေးကွက် အချက်အလက်'), findsOneWidget);
+      expect(find.text('အများဆုံး ပမာဏ'), findsOneWidget);
+      expect(find.textContaining('ကန့်သတ်မထားပါ'), findsOneWidget);
+      expect(find.textContaining('ရင်းမြစ်'), findsOneWidget);
     },
   );
 }

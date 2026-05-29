@@ -58,10 +58,11 @@ class _CoinListPageState extends State<CoinListPage> {
   }
 
   Future<void> _onRefresh() async {
-    _viewModel.add(const CoinListRefreshRequested());
-    await _viewModel.stream.firstWhere(
+    final refreshCompleted = _viewModel.stream.firstWhere(
       (state) => state.status != CoinListStatus.refreshing,
     );
+    _viewModel.add(const CoinListRefreshRequested());
+    await refreshCompleted;
   }
 
   @override
@@ -108,7 +109,7 @@ class _CoinListPageState extends State<CoinListPage> {
                 controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  if (state.isOffline)
+                  if (state.hasCachedData)
                     SliverToBoxAdapter(
                       child: OfflineBanner(lastUpdated: state.lastUpdated),
                     ),
@@ -136,7 +137,7 @@ class _CoinListPageState extends State<CoinListPage> {
                     SliverFillRemaining(
                       hasScrollBody: false,
                       child: EmptyView(
-                        message: state.isOffline && state.query.isNotEmpty
+                        message: state.hasCachedData && state.query.isNotEmpty
                             ? context.l10n.emptyCachedCoins
                             : context.l10n.emptyCoins,
                       ),

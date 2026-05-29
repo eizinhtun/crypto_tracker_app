@@ -49,6 +49,7 @@ class CoinDetailViewModel extends Bloc<CoinDetailEvent, CoinDetailState> {
       state.copyWith(
         status: CoinDetailStatus.loading,
         isOffline: false,
+        hasCachedData: false,
         clearFailure: true,
         clearLastUpdated: true,
       ),
@@ -72,6 +73,7 @@ class CoinDetailViewModel extends Bloc<CoinDetailEvent, CoinDetailState> {
               descriptionText: HtmlTextFormatter.plainText(detail.description),
               isFavorite: isFavorite,
               isOffline: detailResult.isFromCache,
+              hasCachedData: detailResult.isFromCache,
               lastUpdated: detailResult.lastUpdated,
               clearFailure: true,
               clearLastUpdated: !detailResult.isFromCache,

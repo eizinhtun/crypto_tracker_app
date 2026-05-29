@@ -123,45 +123,12 @@ class CryptoRemoteDataSourceImpl implements CryptoRemoteDataSource {
       throw const ServerException('Unexpected search response');
     }
 
-    final ids = _searchCoinIds(searchData['coins'] as List);
-    if (ids.isEmpty) {
-      return const [];
-    }
-
-    final marketsResponse = await _safeGet(
-      ApiConstants.coinsMarkets,
-      queryParameters: {
-        'vs_currency': AppConstants.defaultCurrency,
-        'ids': ids.join(','),
-        'order': 'market_cap_desc',
-        'per_page': ids.length,
-        'page': 1,
-        'sparkline': false,
-        'price_change_percentage': '24h',
-      },
-    );
-    final marketsData = marketsResponse.data;
-
-    if (marketsData is! List) {
-      throw const ServerException('Unexpected search market response');
-    }
-
-    final coinsById = {
-      for (final coin in marketsData
-          .whereType<Map>()
-          .map((item) => CoinModel.fromJson(Map<String, dynamic>.from(item))))
-        coin.id: coin,
-    };
-
-    return ids
-        .map((id) => coinsById[id])
-        .whereType<CoinModel>()
-        .toList(growable: false);
+    return _searchCoins(searchData['coins'] as List);
   }
 
-  List<String> _searchCoinIds(List<dynamic> coins) {
+  List<CoinModel> _searchCoins(List<dynamic> coins) {
     final seenIds = <String>{};
-    final ids = <String>[];
+    final results = <CoinModel>[];
 
     for (final item in coins.whereType<Map>()) {
       final id = item['id'];
@@ -174,13 +141,24 @@ class CryptoRemoteDataSourceImpl implements CryptoRemoteDataSource {
         continue;
       }
 
-      ids.add(safeId);
-      if (ids.length == AppConstants.defaultPageSize) {
+      final imageValue = item['large'] ?? item['thumb'] ?? item['small'];
+      results.add(
+        CoinModel(
+          id: safeId,
+          symbol: (item['symbol'] as String? ?? '').trim(),
+          name: (item['name'] as String? ?? '').trim(),
+          image: imageValue is String && imageValue.trim().isNotEmpty
+              ? imageValue
+              : null,
+        ),
+      );
+
+      if (results.length == AppConstants.defaultPageSize) {
         break;
       }
     }
 
-    return ids;
+    return results;
   }
 
   Future<Response<dynamic>> _safeGet(

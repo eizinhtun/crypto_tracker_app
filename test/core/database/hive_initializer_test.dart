@@ -36,8 +36,10 @@ void main() {
       await HiveInitializer.init(path: tempDir.path);
 
       final coinsBox = Hive.box<CoinsCacheRecord>(HiveBoxes.coins);
+      final settingsBox = Hive.box<String>(HiveBoxes.settings);
       expect(coinsBox.isOpen, isTrue);
       expect(coinsBox.isEmpty, isTrue);
+      expect(settingsBox.isOpen, isTrue);
       expect(
         Hive.isAdapterRegistered(CryptoCacheAdapters.coinsRecordTypeId),
         isTrue,

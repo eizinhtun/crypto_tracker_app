@@ -13,6 +13,11 @@ void main() {
       expect(localizations.searchHint, 'ဒင်္ဂါးများ ရှာဖွေပါ');
       expect(localizations.retry, 'ထပ်မံကြိုးစားမည်');
       expect(localizations.offline, contains('အော့ဖ်လိုင်း'));
+      expect(localizations.liveCoinGecko, isNot(contains('LIVE')));
+      expect(localizations.volume24hShort, isNot(contains('VOL')));
+      expect(localizations.coinCount(1), isNot(contains('COIN')));
+      expect(
+          localizations.sourceHost('coingecko.com'), isNot(contains('SOURCE')));
       expect(
         localizations.failureMessage(FailureCategory.rateLimit),
         contains('တောင်းဆိုမှုများလွန်းနေသည်'),
