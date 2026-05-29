@@ -1,10 +1,19 @@
-name: Flutter CI
+name: Flutter CI/CD
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+  merge_group:
+    types: [checks_requested]
+
+  push:
+    branches: [main]
+    tags:
+      - 'v*.*.*'
+
+  workflow_dispatch:
 
 concurrency:
   group: flutter-ci-${{ github.workflow }}-${{ github.ref }}
@@ -15,12 +24,45 @@ permissions:
 
 env:
   FLUTTER_VERSION: '3.44.0'
+  JAVA_VERSION: '17'
+  APK_NAME: crypto-tracker-debug-apk
 
 jobs:
+  validate-project:
+    name: Validate Project
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate required files
+        run: |
+          echo "Checking required project files..."
+
+          test -f pubspec.yaml || (echo "❌ pubspec.yaml is missing" && exit 1)
+          test -f pubspec.lock || (echo "❌ pubspec.lock is missing" && exit 1)
+          test -d lib || (echo "❌ lib directory is missing" && exit 1)
+          test -d test || (echo "❌ test directory is missing" && exit 1)
+          test -f README.md || (echo "❌ README.md is missing" && exit 1)
+
+          echo "✅ Required files exist"
+
+      - name: Check workflow Flutter version placeholder
+        run: |
+          if grep -R "YOUR_FLUTTER_VERSION" .github/workflows/*.yml 2>/dev/null; then
+            echo "❌ Flutter version placeholder found. Replace YOUR_FLUTTER_VERSION with a real version."
+            exit 1
+          fi
+
+          echo "✅ No Flutter version placeholder found"
+
   quality:
     name: Code Quality
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    needs: validate-project
 
     steps:
       - name: Checkout repository
@@ -47,9 +89,35 @@ jobs:
       - name: Analyze project strictly
         run: flutter analyze --fatal-infos --fatal-warnings
 
+      - name: Check forbidden debug prints
+        run: |
+          echo "Checking debug print usage..."
+
+          if grep -R "print(" lib test 2>/dev/null; then
+            echo "❌ print() found. Use debugPrint guarded by kDebugMode or remove debug logs."
+            exit 1
+          fi
+
+          echo "✅ No print() usage found"
+
+      - name: Check no hardcoded CoinGecko secrets
+        run: |
+          echo "Checking for hardcoded secrets..."
+
+          if grep -R "CG-[A-Za-z0-9]" lib test README.md 2>/dev/null; then
+            echo "❌ Possible CoinGecko API key found."
+            exit 1
+          fi
+
+          if grep -R "api_key\|apikey\|secret\|token" lib 2>/dev/null; then
+            echo "⚠️ Potential secret-related keyword found. Review manually."
+          fi
+
+          echo "✅ Secret scan completed"
+
       - name: Check architecture boundaries
         run: |
-          echo "Checking forbidden imports in presentation/domain layers..."
+          echo "Checking forbidden imports and usage in presentation/domain layers..."
 
           if grep -R "package:dio" lib/features/*/presentation lib/features/*/domain 2>/dev/null; then
             echo "❌ Dio import found in presentation/domain layer."
@@ -66,12 +134,28 @@ jobs:
             exit 1
           fi
 
-          echo "✅ Architecture boundary check passed."
+          if grep -R "Hive\." lib/features/*/presentation lib/features/*/domain 2>/dev/null; then
+            echo "❌ Hive usage found in presentation/domain layer."
+            exit 1
+          fi
+
+          echo "✅ Architecture boundary check passed"
+
+      - name: Check no raw DioException user-facing usage
+        run: |
+          echo "Checking raw DioException exposure..."
+
+          if grep -R "DioException" lib/features/*/presentation 2>/dev/null; then
+            echo "❌ DioException referenced in presentation layer."
+            exit 1
+          fi
+
+          echo "✅ No DioException found in presentation layer"
 
   test:
     name: Tests and Coverage
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     needs: quality
 
     steps:
@@ -97,17 +181,33 @@ jobs:
       - name: Show coverage summary
         run: lcov --summary coverage/lcov.info
 
+      - name: Generate filtered coverage report
+        run: |
+          lcov \
+            --remove coverage/lcov.info \
+            '*/generated/*' \
+            '*/l10n/*' \
+            '*/localization/*' \
+            '*/main.dart' \
+            '*/injection_container.dart' \
+            -o coverage/lcov_filtered.info || cp coverage/lcov.info coverage/lcov_filtered.info
+
+          lcov --summary coverage/lcov_filtered.info
+
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: coverage/lcov.info
+          path: |
+            coverage/lcov.info
+            coverage/lcov_filtered.info
           if-no-files-found: error
+          retention-days: 14
 
-  build-android:
-    name: Build Android APK
+  build-android-debug:
+    name: Build Android Debug APK
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     needs: test
 
     steps:
@@ -118,7 +218,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: ${{ env.JAVA_VERSION }}
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -133,12 +233,45 @@ jobs:
       - name: Build Android debug APK
         run: flutter build apk --debug
 
-      - name: Upload Android APK artifact
+      - name: Upload Android debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: crypto-tracker-debug-apk
+          name: ${{ env.APK_NAME }}
           path: build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
+          retention-days: 14
+
+  build-web:
+    name: Build Web
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: test
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies with lockfile
+        run: flutter pub get --enforce-lockfile
+
+      - name: Build web
+        run: flutter build web
+
+      - name: Upload web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: crypto-tracker-web-build
+          path: build/web
+          if-no-files-found: error
+          retention-days: 14
 
   dependency-review:
     name: Dependency Review
@@ -156,3 +289,63 @@ jobs:
 
       - name: Dependency review
         uses: actions/dependency-review-action@v4
+
+  release-artifact:
+    name: Release Artifact Summary
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs:
+      - quality
+      - test
+      - build-android-debug
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Release summary
+        run: |
+          echo "✅ Release tag detected: ${{ github.ref_name }}"
+          echo "✅ Quality checks passed"
+          echo "✅ Tests passed"
+          echo "✅ Android debug APK built"
+          echo "Download APK from workflow artifacts."
+
+  final-status:
+    name: Final CI Status
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs:
+      - validate-project
+      - quality
+      - test
+      - build-android-debug
+    if: always()
+
+    steps:
+      - name: Check final status
+        run: |
+          echo "Validate project: ${{ needs.validate-project.result }}"
+          echo "Quality: ${{ needs.quality.result }}"
+          echo "Test: ${{ needs.test.result }}"
+          echo "Android build: ${{ needs.build-android-debug.result }}"
+
+          if [ "${{ needs.validate-project.result }}" != "success" ]; then
+            echo "❌ validate-project failed"
+            exit 1
+          fi
+
+          if [ "${{ needs.quality.result }}" != "success" ]; then
+            echo "❌ quality failed"
+            exit 1
+          fi
+
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            echo "❌ test failed"
+            exit 1
+          fi
+
+          if [ "${{ needs.build-android-debug.result }}" != "success" ]; then
+            echo "❌ build-android-debug failed"
+            exit 1
+          fi
+
+          echo "✅ Final CI status passed"
