@@ -130,7 +130,7 @@ void main() {
     });
 
     test(
-        'Given search response coins, when searching, then market data is fetched for numbered rows',
+        'Given search response coins, when searching, then identity rows are returned from a single request',
         () async {
       final requestedPaths = <String>[];
       final dataSource = _createDataSource(
@@ -138,73 +138,40 @@ void main() {
           responseFor: (options) {
             requestedPaths.add(options.uri.path);
 
-            if (options.uri.path.endsWith(ApiConstants.search)) {
-              expect(options.uri.queryParameters['query'], 'bit');
-              return ResponseBody.fromString(
-                jsonEncode({
-                  'coins': [
-                    {
-                      'id': 'bitcoin',
-                      'symbol': 'btc',
-                      'name': 'Bitcoin',
-                      'large': 'https://example.com/btc.png',
-                    },
-                    {
-                      'id': 'wrapped-bitcoin',
-                      'symbol': 'wbtc',
-                      'name': 'WBTC',
-                      'thumb': 'https://example.com/wbtc.png',
-                    },
-                  ],
-                }),
-                200,
-                headers: _jsonHeaders,
-              );
-            }
-
-            if (options.uri.path.endsWith(ApiConstants.coinsMarkets)) {
-              expect(
-                options.uri.queryParameters['ids'],
-                'bitcoin,wrapped-bitcoin',
-              );
-              expect(options.uri.queryParameters['vs_currency'], 'usd');
-
-              return ResponseBody.fromString(
-                jsonEncode([
-                  {
-                    'id': 'wrapped-bitcoin',
-                    'symbol': 'wbtc',
-                    'name': 'Wrapped Bitcoin',
-                    'current_price': 99950,
-                    'market_cap': 10000000000,
-                    'price_change_percentage_24h': -0.2,
-                  },
+            expect(options.uri.path, endsWith(ApiConstants.search));
+            expect(options.uri.queryParameters['query'], 'bit');
+            return ResponseBody.fromString(
+              jsonEncode({
+                'coins': [
                   {
                     'id': 'bitcoin',
                     'symbol': 'btc',
                     'name': 'Bitcoin',
-                    'current_price': 100000,
-                    'market_cap': 2000000000000,
-                    'price_change_percentage_24h': 1.2,
+                    'large': 'https://example.com/btc.png',
                   },
-                ]),
-                200,
-                headers: _jsonHeaders,
-              );
-            }
-
-            fail('Unexpected request: ${options.uri}');
+                  {
+                    'id': 'wrapped-bitcoin',
+                    'symbol': 'wbtc',
+                    'name': 'WBTC',
+                    'thumb': 'https://example.com/wbtc.png',
+                  },
+                ],
+              }),
+              200,
+              headers: _jsonHeaders,
+            );
           },
         ),
       );
 
       final coins = await dataSource.searchCoins('bit');
 
-      expect(requestedPaths, hasLength(2));
+      expect(requestedPaths, hasLength(1));
       expect(coins.map((coin) => coin.id), ['bitcoin', 'wrapped-bitcoin']);
-      expect(coins.first.currentPrice, 100000);
-      expect(coins.first.marketCap, 2000000000000);
-      expect(coins.first.priceChangePercentage24h, 1.2);
+      expect(coins.first.currentPrice, isNull);
+      expect(coins.first.marketCap, isNull);
+      expect(coins.first.priceChangePercentage24h, isNull);
+      expect(coins.first.image, 'https://example.com/btc.png');
     });
 
     test(
@@ -233,50 +200,36 @@ void main() {
     });
 
     test(
-        'Given search market enrichment is rate limited, when searching, then search identity rows are returned',
+        'Given search response has ids, when searching, then market endpoint is not called',
         () async {
       final requestedPaths = <String>[];
       final dataSource = _createDataSource(
         _MockDioAdapter(
           responseFor: (options) {
             requestedPaths.add(options.uri.path);
-
-            if (options.uri.path.endsWith(ApiConstants.search)) {
-              return ResponseBody.fromString(
-                jsonEncode({
-                  'coins': [
-                    {
-                      'id': 'bitcoin',
-                      'symbol': 'btc',
-                      'name': 'Bitcoin',
-                      'large': 'https://example.com/btc.png',
-                    },
-                  ],
-                }),
-                200,
-                headers: _jsonHeaders,
-              );
-            }
-
-            if (options.uri.path.endsWith(ApiConstants.coinsMarkets)) {
-              return ResponseBody.fromString(
-                '{"error":"rate limited"}',
-                429,
-                statusMessage: 'Too Many Requests',
-                headers: _jsonHeaders,
-              );
-            }
-
-            fail('Unexpected request: ${options.uri}');
+            expect(options.uri.path, endsWith(ApiConstants.search));
+            return ResponseBody.fromString(
+              jsonEncode({
+                'coins': [
+                  {
+                    'id': 'bitcoin',
+                    'symbol': 'btc',
+                    'name': 'Bitcoin',
+                    'large': 'https://example.com/btc.png',
+                  },
+                ],
+              }),
+              200,
+              headers: _jsonHeaders,
+            );
           },
         ),
       );
 
       final coins = await dataSource.searchCoins('bitcoin');
 
-      expect(requestedPaths, hasLength(2));
+      expect(requestedPaths, hasLength(1));
       expect(requestedPaths[0], endsWith(ApiConstants.search));
-      expect(requestedPaths[1], endsWith(ApiConstants.coinsMarkets));
       expect(coins, hasLength(1));
       expect(coins.single.id, 'bitcoin');
       expect(coins.single.currentPrice, isNull);

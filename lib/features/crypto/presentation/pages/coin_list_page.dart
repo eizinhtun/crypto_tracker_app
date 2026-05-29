@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/localization/locale_cubit.dart';
@@ -28,6 +31,9 @@ class CoinListPage extends StatefulWidget {
 
 class _CoinListPageState extends State<CoinListPage> {
   late final ScrollController _scrollController;
+  Timer? _scrollThrottle;
+  double? _pendingScrollPixels;
+  double? _pendingMaxScrollExtent;
 
   CoinListViewModel get _viewModel => context.read<CoinListViewModel>();
 
@@ -39,6 +45,7 @@ class _CoinListPageState extends State<CoinListPage> {
 
   @override
   void dispose() {
+    _scrollThrottle?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -49,10 +56,42 @@ class _CoinListPageState extends State<CoinListPage> {
     }
 
     final position = _scrollController.position;
+    if (position.maxScrollExtent - position.pixels >
+        AppConstants.paginationScrollThreshold) {
+      return;
+    }
+
+    _pendingScrollPixels = position.pixels;
+    _pendingMaxScrollExtent = position.maxScrollExtent;
+
+    if (_scrollThrottle?.isActive ?? false) {
+      return;
+    }
+
+    _dispatchPendingScroll();
+    _scrollThrottle = Timer(
+      AppConstants.scrollEventThrottleDuration,
+      _dispatchPendingScroll,
+    );
+  }
+
+  void _dispatchPendingScroll() {
+    if (!mounted) {
+      return;
+    }
+
+    final pixels = _pendingScrollPixels;
+    final maxScrollExtent = _pendingMaxScrollExtent;
+    if (pixels == null || maxScrollExtent == null) {
+      return;
+    }
+
+    _pendingScrollPixels = null;
+    _pendingMaxScrollExtent = null;
     _viewModel.add(
       CoinListScrollChanged(
-        pixels: position.pixels,
-        maxScrollExtent: position.maxScrollExtent,
+        pixels: pixels,
+        maxScrollExtent: maxScrollExtent,
       ),
     );
   }
@@ -77,6 +116,7 @@ class _CoinListPageState extends State<CoinListPage> {
                   current.transientFailureCategory &&
               current.transientFailureCategory != null;
         },
+        buildWhen: _shouldBuildPage,
         listener: (context, state) {
           final message = context.l10n.failureMessage(
             state.transientFailureCategory,
@@ -205,6 +245,18 @@ class _CoinListPageState extends State<CoinListPage> {
         },
       ),
     );
+  }
+
+  bool _shouldBuildPage(CoinListState previous, CoinListState current) {
+    return previous.status != current.status ||
+        previous.coins != current.coins ||
+        previous.trendingCoins != current.trendingCoins ||
+        previous.globalMarket != current.globalMarket ||
+        previous.query != current.query ||
+        previous.hasReachedMax != current.hasReachedMax ||
+        previous.hasCachedData != current.hasCachedData ||
+        previous.lastUpdated != current.lastUpdated ||
+        previous.failureCategory != current.failureCategory;
   }
 }
 

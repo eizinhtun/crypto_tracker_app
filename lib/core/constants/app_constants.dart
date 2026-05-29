@@ -7,6 +7,7 @@ abstract final class AppConstants {
 
   static const requestTimeout = Duration(seconds: 20);
   static const debounceDuration = Duration(milliseconds: 350);
+  static const scrollEventThrottleDuration = Duration(milliseconds: 120);
   static const paginationScrollThreshold = 300.0;
 
   static const coinsCacheTtl = Duration(minutes: 5);
