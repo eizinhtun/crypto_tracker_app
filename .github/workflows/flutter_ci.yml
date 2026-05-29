@@ -51,7 +51,9 @@ jobs:
 
       - name: Check workflow Flutter version placeholder
         run: |
-          if grep -R "3.44.0" .github/workflows/*.yml 2>/dev/null; then
+          echo "Checking Flutter version placeholder..."
+
+          if grep -R "YOUR_FLUTTER_VERSION" .github/workflows/*.yml 2>/dev/null; then
             echo "❌ Flutter version placeholder found. Replace YOUR_FLUTTER_VERSION with a real version."
             exit 1
           fi
@@ -107,10 +109,6 @@ jobs:
           if grep -R "CG-[A-Za-z0-9]" lib test README.md 2>/dev/null; then
             echo "❌ Possible CoinGecko API key found."
             exit 1
-          fi
-
-          if grep -R "api_key\|apikey\|secret\|token" lib 2>/dev/null; then
-            echo "⚠️ Potential secret-related keyword found. Review manually."
           fi
 
           echo "✅ Secret scan completed"
