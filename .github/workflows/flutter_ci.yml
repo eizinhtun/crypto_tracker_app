@@ -7,13 +7,108 @@ on:
     branches: [main]
 
 concurrency:
-  group: flutter-ci-${{ github.ref }}
+  group: flutter-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: 'YOUR_FLUTTER_VERSION'
+
 jobs:
-  analyze-test-build:
-    name: Analyze, Test, and Build
+  quality:
+    name: Code Quality
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Show Flutter and Dart versions
+        run: |
+          flutter --version
+          dart --version
+
+      - name: Install dependencies with lockfile
+        run: flutter pub get --enforce-lockfile
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze project strictly
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+      - name: Check architecture boundaries
+        run: |
+          echo "Checking forbidden imports in presentation/domain layers..."
+
+          if grep -R "package:dio" lib/features/*/presentation lib/features/*/domain 2>/dev/null; then
+            echo "❌ Dio import found in presentation/domain layer."
+            exit 1
+          fi
+
+          if grep -R "package:hive" lib/features/*/presentation lib/features/*/domain 2>/dev/null; then
+            echo "❌ Hive import found in presentation/domain layer."
+            exit 1
+          fi
+
+          if grep -R "Dio(" lib/features/*/presentation lib/features/*/domain 2>/dev/null; then
+            echo "❌ Dio usage found in presentation/domain layer."
+            exit 1
+          fi
+
+          echo "✅ Architecture boundary check passed."
+
+  test:
+    name: Tests and Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: quality
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies with lockfile
+        run: flutter pub get --enforce-lockfile
+
+      - name: Run tests with coverage
+        run: flutter test --coverage
+
+      - name: Install lcov
+        run: sudo apt-get update && sudo apt-get install -y lcov
+
+      - name: Show coverage summary
+        run: lcov --summary coverage/lcov.info
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/lcov.info
+          if-no-files-found: error
+
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: test
 
     steps:
       - name: Checkout repository
@@ -28,31 +123,36 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.44.0'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
 
-      - name: Show Flutter version
-        run: flutter --version
+      - name: Install dependencies with lockfile
+        run: flutter pub get --enforce-lockfile
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Build Android debug APK
+        run: flutter build apk --debug
 
-      - name: Verify formatting
-        run: dart format --output=none --set-exit-if-changed .
-
-      - name: Analyze project
-        run: flutter analyze --fatal-infos --fatal-warnings
-
-      - name: Run tests with coverage
-        run: flutter test --coverage
-
-      - name: Upload coverage report
+      - name: Upload Android APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
-          path: coverage/lcov.info
-          if-no-files-found: ignore
+          name: crypto-tracker-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
 
-      - name: Build Android APK
-        run: flutter build apk --debug
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'pull_request'
+
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
