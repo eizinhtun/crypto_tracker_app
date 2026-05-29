@@ -164,7 +164,7 @@ display complete market rows
 
 This costs one extra API call, but it provides a better user experience because search results show the same type of price and market information as the main list.
 
-To reduce unnecessary traffic, the app uses debounced search, request sequencing to ignore stale responses, duplicate request protection, and friendly rate-limit handling.
+To reduce unnecessary traffic, search runs only when the user submits the query, enrichment is limited to the top 20 returned ids, request sequencing ignores stale responses, duplicate request guards prevent repeated work, and rate-limit failures are mapped to friendly UI messages. If the enrichment request fails, the repository uses cached search data when available or returns a friendly error instead of showing incomplete market rows.
 
 ## Security Considerations
 

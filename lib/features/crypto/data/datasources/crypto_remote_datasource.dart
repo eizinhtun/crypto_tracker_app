@@ -123,7 +123,16 @@ class CryptoRemoteDataSourceImpl implements CryptoRemoteDataSource {
       throw const ServerException('Unexpected search response');
     }
 
-    return _searchCoins(searchData['coins'] as List);
+    final searchRows = _searchCoins(searchData['coins'] as List);
+    if (searchRows.isEmpty) {
+      return const [];
+    }
+
+    final marketRowsById = await _searchMarketRowsById(searchRows);
+    return searchRows
+        .map((coin) => marketRowsById[coin.id])
+        .whereType<CoinModel>()
+        .toList(growable: false);
   }
 
   List<CoinModel> _searchCoins(List<dynamic> coins) {
@@ -159,6 +168,47 @@ class CryptoRemoteDataSourceImpl implements CryptoRemoteDataSource {
     }
 
     return results;
+  }
+
+  Future<Map<String, CoinModel>> _searchMarketRowsById(
+    List<CoinModel> searchRows,
+  ) async {
+    final ids = searchRows
+        .map((coin) => coin.id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .take(AppConstants.defaultPageSize)
+        .toList(growable: false);
+
+    if (ids.isEmpty) {
+      return const {};
+    }
+
+    final response = await _safeGet(
+      ApiConstants.coinsMarkets,
+      queryParameters: {
+        'vs_currency': AppConstants.defaultCurrency,
+        'ids': ids.join(','),
+        'order': 'market_cap_desc',
+        'per_page': ids.length,
+        'page': AppConstants.firstPage,
+        'sparkline': false,
+        'price_change_percentage': '24h',
+      },
+    );
+
+    final data = response.data;
+    if (data is! List) {
+      throw const ServerException('Unexpected search market response');
+    }
+
+    return {
+      for (final coin in data
+          .whereType<Map>()
+          .map((item) => CoinModel.fromJson(Map<String, dynamic>.from(item)))
+          .where((coin) => coin.id.trim().isNotEmpty))
+        coin.id: coin,
+    };
   }
 
   Future<Response<dynamic>> _safeGet(

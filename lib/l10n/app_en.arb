@@ -11,6 +11,7 @@
   "liveCoinGecko": "LIVE / COINGECKO",
   "asset": "ASSET",
   "price24h": "PRICE  ·  24H",
+  "searchResultLimitNote": "Search shows top 20 results",
   "clearSearch": "Clear search",
   "addFavorite": "Add favorite",
   "removeFavorite": "Remove favorite",

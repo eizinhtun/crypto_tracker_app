@@ -130,7 +130,7 @@ void main() {
     });
 
     test(
-        'Given search response coins, when searching, then identity rows are returned from a single request',
+        'Given search response coins, when searching, then market rows are fetched for complete results',
         () async {
       final requestedPaths = <String>[];
       final dataSource = _createDataSource(
@@ -138,25 +138,57 @@ void main() {
           responseFor: (options) {
             requestedPaths.add(options.uri.path);
 
-            expect(options.uri.path, endsWith(ApiConstants.search));
-            expect(options.uri.queryParameters['query'], 'bit');
+            if (options.uri.path.endsWith(ApiConstants.search)) {
+              expect(options.uri.queryParameters['query'], 'bit');
+              return ResponseBody.fromString(
+                jsonEncode({
+                  'coins': [
+                    {
+                      'id': 'bitcoin',
+                      'symbol': 'btc',
+                      'name': 'Bitcoin',
+                      'large': 'https://example.com/btc.png',
+                    },
+                    {
+                      'id': 'wrapped-bitcoin',
+                      'symbol': 'wbtc',
+                      'name': 'WBTC',
+                      'thumb': 'https://example.com/wbtc.png',
+                    },
+                  ],
+                }),
+                200,
+                headers: _jsonHeaders,
+              );
+            }
+
+            expect(options.uri.path, endsWith(ApiConstants.coinsMarkets));
+            expect(
+              options.uri.queryParameters['ids'],
+              'bitcoin,wrapped-bitcoin',
+            );
+            expect(options.uri.queryParameters['per_page'], '2');
             return ResponseBody.fromString(
-              jsonEncode({
-                'coins': [
-                  {
-                    'id': 'bitcoin',
-                    'symbol': 'btc',
-                    'name': 'Bitcoin',
-                    'large': 'https://example.com/btc.png',
-                  },
-                  {
-                    'id': 'wrapped-bitcoin',
-                    'symbol': 'wbtc',
-                    'name': 'WBTC',
-                    'thumb': 'https://example.com/wbtc.png',
-                  },
-                ],
-              }),
+              jsonEncode([
+                {
+                  'id': 'wrapped-bitcoin',
+                  'symbol': 'wbtc',
+                  'name': 'WBTC',
+                  'image': 'https://example.com/wbtc-market.png',
+                  'current_price': 99500,
+                  'market_cap': 20000000000,
+                  'price_change_percentage_24h': 0.8,
+                },
+                {
+                  'id': 'bitcoin',
+                  'symbol': 'btc',
+                  'name': 'Bitcoin',
+                  'image': 'https://example.com/btc-market.png',
+                  'current_price': 100000,
+                  'market_cap': 2000000000000,
+                  'price_change_percentage_24h': 1.2,
+                },
+              ]),
               200,
               headers: _jsonHeaders,
             );
@@ -166,12 +198,14 @@ void main() {
 
       final coins = await dataSource.searchCoins('bit');
 
-      expect(requestedPaths, hasLength(1));
+      expect(requestedPaths, hasLength(2));
+      expect(requestedPaths[0], endsWith(ApiConstants.search));
+      expect(requestedPaths[1], endsWith(ApiConstants.coinsMarkets));
       expect(coins.map((coin) => coin.id), ['bitcoin', 'wrapped-bitcoin']);
-      expect(coins.first.currentPrice, isNull);
-      expect(coins.first.marketCap, isNull);
-      expect(coins.first.priceChangePercentage24h, isNull);
-      expect(coins.first.image, 'https://example.com/btc.png');
+      expect(coins.first.currentPrice, 100000);
+      expect(coins.first.marketCap, 2000000000000);
+      expect(coins.first.priceChangePercentage24h, 1.2);
+      expect(coins.first.image, 'https://example.com/btc-market.png');
     });
 
     test(
@@ -200,25 +234,53 @@ void main() {
     });
 
     test(
-        'Given search response has ids, when searching, then market endpoint is not called',
+        'Given search market data omits one id, when searching, then incomplete rows are not returned',
         () async {
       final requestedPaths = <String>[];
       final dataSource = _createDataSource(
         _MockDioAdapter(
           responseFor: (options) {
             requestedPaths.add(options.uri.path);
-            expect(options.uri.path, endsWith(ApiConstants.search));
+            if (options.uri.path.endsWith(ApiConstants.search)) {
+              return ResponseBody.fromString(
+                jsonEncode({
+                  'coins': [
+                    {
+                      'id': 'bitcoin',
+                      'symbol': 'btc',
+                      'name': 'Bitcoin',
+                      'large': 'https://example.com/btc.png',
+                    },
+                    {
+                      'id': 'missing-market-row',
+                      'symbol': 'mmr',
+                      'name': 'Missing Market Row',
+                      'large': 'https://example.com/missing.png',
+                    },
+                  ],
+                }),
+                200,
+                headers: _jsonHeaders,
+              );
+            }
+
+            expect(options.uri.path, endsWith(ApiConstants.coinsMarkets));
+            expect(
+              options.uri.queryParameters['ids'],
+              'bitcoin,missing-market-row',
+            );
             return ResponseBody.fromString(
-              jsonEncode({
-                'coins': [
-                  {
-                    'id': 'bitcoin',
-                    'symbol': 'btc',
-                    'name': 'Bitcoin',
-                    'large': 'https://example.com/btc.png',
-                  },
-                ],
-              }),
+              jsonEncode([
+                {
+                  'id': 'bitcoin',
+                  'symbol': 'btc',
+                  'name': 'Bitcoin',
+                  'image': 'https://example.com/btc-market.png',
+                  'current_price': 100000,
+                  'market_cap': 2000000000000,
+                  'price_change_percentage_24h': 1.2,
+                },
+              ]),
               200,
               headers: _jsonHeaders,
             );
@@ -228,13 +290,13 @@ void main() {
 
       final coins = await dataSource.searchCoins('bitcoin');
 
-      expect(requestedPaths, hasLength(1));
+      expect(requestedPaths, hasLength(2));
       expect(requestedPaths[0], endsWith(ApiConstants.search));
       expect(coins, hasLength(1));
       expect(coins.single.id, 'bitcoin');
-      expect(coins.single.currentPrice, isNull);
-      expect(coins.single.marketCap, isNull);
-      expect(coins.single.image, 'https://example.com/btc.png');
+      expect(coins.single.currentPrice, 100000);
+      expect(coins.single.marketCap, 2000000000000);
+      expect(coins.single.image, 'https://example.com/btc-market.png');
     });
 
     test(

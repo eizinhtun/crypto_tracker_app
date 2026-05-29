@@ -19,6 +19,7 @@ abstract final class LocalizationKeys {
   static const liveCoinGecko = 'liveCoinGecko';
   static const asset = 'asset';
   static const price24h = 'price24h';
+  static const searchResultLimitNote = 'searchResultLimitNote';
   static const clearSearch = 'clearSearch';
   static const addFavorite = 'addFavorite';
   static const removeFavorite = 'removeFavorite';

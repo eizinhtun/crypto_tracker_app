@@ -234,6 +234,52 @@ void main() {
       expect(find.text('ပိုင်ဆိုင်မှု'), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'Given submitted search returns market rows, when results render, then price market cap and 24h values are shown',
+    (tester) async {
+      final repository = _SearchResultsRepository();
+      final viewModel = CoinListViewModel(
+        getCoinsUseCase: GetCoinsUseCase(repository),
+        getCryptoOverviewUseCase: GetCryptoOverviewUseCase(repository),
+        getFavoriteStatusUseCase: GetFavoriteStatusUseCase(repository),
+        searchCoinsUseCase: SearchCoinsUseCase(repository),
+        toggleFavoriteUseCase: ToggleFavoriteUseCase(repository),
+      );
+      addTearDown(viewModel.close);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: BlocProvider.value(
+            value: viewModel,
+            child: const CoinListPage(),
+          ),
+        ),
+      );
+
+      viewModel.add(const CoinListStarted());
+      await tester.pump();
+      await tester.pump();
+
+      final searchCompleted = viewModel.stream.firstWhere(
+        (state) => state.query == 'bitcoin' && state.coins.isNotEmpty,
+      );
+      await tester.enterText(find.byType(TextField), ' bitcoin ');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pump();
+      await searchCompleted;
+      await tester.pump();
+
+      expect(repository.searchQueries, ['bitcoin']);
+      expect(find.text('Bitcoin Search'), findsOneWidget);
+      expect(find.text(r'$100,000.00'), findsOneWidget);
+      expect(find.text(r'BTC  ·  $1.23T'), findsOneWidget);
+      expect(find.text('1.25%'), findsOneWidget);
+      expect(find.text('Search shows top 20 results'), findsOneWidget);
+    },
+  );
 }
 
 class _OptionalCachedOverviewRepository implements CryptoRepository {
@@ -498,6 +544,74 @@ class _LoadMoreFailureRepository implements CryptoRepository {
 
   @override
   Future<Result<DataResult<List<Coin>>>> searchCoins(String query) {
+    throw UnimplementedError();
+  }
+}
+
+class _SearchResultsRepository implements CryptoRepository {
+  final searchQueries = <String>[];
+
+  @override
+  Future<Result<DataResult<List<Coin>>>> getCoins({
+    required int page,
+    required int perPage,
+  }) async {
+    return const Result.success(
+      DataResult.remote([
+        Coin(id: 'initial-coin', symbol: 'ini', name: 'Initial Coin'),
+      ]),
+    );
+  }
+
+  @override
+  Future<Result<DataResult<GlobalMarket>>> getGlobalMarket() async {
+    return const Result.success(
+      DataResult.remote(
+        GlobalMarket(
+          activeCryptocurrencies: 10000,
+          markets: 1000,
+          totalMarketCapUsd: 2000000000000,
+          totalVolumeUsd: 90000000000,
+          marketCapChangePercentage24hUsd: 1.2,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Future<Result<DataResult<List<TrendingCoin>>>> getTrendingCoins() async {
+    return const Result.success(DataResult.remote([]));
+  }
+
+  @override
+  Future<Result<DataResult<List<Coin>>>> searchCoins(String query) async {
+    searchQueries.add(query);
+    return const Result.success(
+      DataResult.remote([
+        Coin(
+          id: 'bitcoin',
+          symbol: 'btc',
+          name: 'Bitcoin Search',
+          currentPrice: 100000,
+          marketCap: 1230000000000,
+          priceChangePercentage24h: 1.25,
+        ),
+      ]),
+    );
+  }
+
+  @override
+  Future<Result<bool>> isFavorite(String coinId) async {
+    return const Result.success(false, source: ResultSource.local);
+  }
+
+  @override
+  Future<Result<bool>> toggleFavorite(String coinId) async {
+    return const Result.success(true, source: ResultSource.local);
+  }
+
+  @override
+  Future<Result<DataResult<CoinDetail>>> getCoinDetail(String coinId) {
     throw UnimplementedError();
   }
 }

@@ -57,6 +57,8 @@ class AppLocalizations {
   String get liveCoinGecko => _text(LocalizationKeys.liveCoinGecko);
   String get asset => _text(LocalizationKeys.asset);
   String get price24h => _text(LocalizationKeys.price24h);
+  String get searchResultLimitNote =>
+      _text(LocalizationKeys.searchResultLimitNote);
   String get clearSearch => _text(LocalizationKeys.clearSearch);
   String get addFavorite => _text(LocalizationKeys.addFavorite);
   String get removeFavorite => _text(LocalizationKeys.removeFavorite);
@@ -193,6 +195,7 @@ const _localizedValues = <String, Map<String, String>>{
     LocalizationKeys.liveCoinGecko: 'LIVE / COINGECKO',
     LocalizationKeys.asset: 'ASSET',
     LocalizationKeys.price24h: 'PRICE  ·  24H',
+    LocalizationKeys.searchResultLimitNote: 'Search shows top 20 results',
     LocalizationKeys.clearSearch: 'Clear search',
     LocalizationKeys.addFavorite: 'Add favorite',
     LocalizationKeys.removeFavorite: 'Remove favorite',
@@ -251,6 +254,7 @@ const _localizedValues = <String, Map<String, String>>{
     LocalizationKeys.liveCoinGecko: 'တိုက်ရိုက် / ကွိုင်ဂက်ကို',
     LocalizationKeys.asset: 'ပိုင်ဆိုင်မှု',
     LocalizationKeys.price24h: 'စျေးနှုန်း  ·  ၂၄နာရီ',
+    LocalizationKeys.searchResultLimitNote: 'ထိပ်ဆုံး ရလဒ် ၂၀ ခုကို ပြသထားသည်',
     LocalizationKeys.clearSearch: 'ရှာဖွေမှု ဖျက်မည်',
     LocalizationKeys.addFavorite: 'နှစ်သက်ရာထဲ ထည့်မည်',
     LocalizationKeys.removeFavorite: 'နှစ်သက်ရာမှ ဖယ်မည်',

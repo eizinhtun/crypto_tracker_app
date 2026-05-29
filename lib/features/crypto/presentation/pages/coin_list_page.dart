@@ -350,9 +350,23 @@ class _CoinTableHeader extends StatelessWidget {
             child: Text('#', style: labelStyle),
           ),
           Expanded(
-            child: Text(l10n.asset, style: labelStyle),
+            child: Text(
+              l10n.asset,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: labelStyle,
+            ),
           ),
-          Text(l10n.price24h, style: labelStyle),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              l10n.price24h,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
+              style: labelStyle,
+            ),
+          ),
         ],
       ),
     );
@@ -403,7 +417,7 @@ class _SearchResultLimitNote extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
       child: Text(
-        'Search shows top 20 results',
+        context.l10n.searchResultLimitNote,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: AppTextStyles.coinMeta(colors.muted),

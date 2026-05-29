@@ -155,6 +155,40 @@ void main() {
   );
 
   testWidgets(
+    'Given paged markets are loaded, when app scrolls near bottom, then page two is requested once',
+    (tester) async {
+      final networkInfo = _MutableNetworkInfo(isConnected: true);
+      final remoteDataSource = _CountingPagedRemoteDataSource();
+
+      _registerAppDependencies(
+        networkInfo: networkInfo,
+        remoteDataSource: remoteDataSource,
+      );
+      final viewModel = await _createLoadedViewModel(tester);
+      addTearDown(viewModel.close);
+      await tester.pumpWidget(_TestMarketsApp(viewModel: viewModel));
+      await tester.pump();
+
+      final pageTwoLoaded = viewModel.stream.firstWhere(
+        (state) => state.coins.any((coin) => coin.id == 'page-two-coin'),
+      );
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -2400));
+      await tester.pump(AppConstants.scrollEventThrottleDuration);
+      await tester.runAsync(() async {
+        await pageTwoLoaded.timeout(const Duration(seconds: 3));
+      });
+      await tester.pump();
+
+      expect(remoteDataSource.requestedPages, [1, 2]);
+      expect(viewModel.state.coins.map((coin) => coin.id), contains('coin-0'));
+      expect(
+        viewModel.state.coins.map((coin) => coin.id),
+        contains('page-two-coin'),
+      );
+    },
+  );
+
+  testWidgets(
     'Given cached markets exist, when app restarts offline in Myanmar dark mode, then localized cached UI is shown',
     (tester) async {
       final networkInfo = _MutableNetworkInfo(isConnected: true);
@@ -531,6 +565,74 @@ class _FakeRemoteDataSource implements CryptoRemoteDataSource {
       page: AppConstants.firstPage,
       perPage: AppConstants.defaultPageSize,
     );
+  }
+}
+
+class _CountingPagedRemoteDataSource implements CryptoRemoteDataSource {
+  final requestedPages = <int>[];
+
+  @override
+  Future<List<CoinModel>> getCoins({
+    required int page,
+    required int perPage,
+  }) async {
+    requestedPages.add(page);
+    if (page == AppConstants.firstPage) {
+      return List<CoinModel>.generate(
+        AppConstants.defaultPageSize,
+        (index) => CoinModel(
+          id: 'coin-$index',
+          symbol: 'c$index',
+          name: 'Coin $index',
+          currentPrice: 100 + index.toDouble(),
+          marketCap: 1000000000 + index.toDouble(),
+          priceChangePercentage24h: 1,
+        ),
+      );
+    }
+
+    if (page == AppConstants.firstPage + 1) {
+      return const [
+        CoinModel(
+          id: 'page-two-coin',
+          symbol: 'p2',
+          name: 'Page Two Coin',
+          currentPrice: 200,
+          marketCap: 2000000000,
+          priceChangePercentage24h: 2,
+        ),
+      ];
+    }
+
+    return const [];
+  }
+
+  @override
+  Future<GlobalMarketModel> getGlobalMarket() async {
+    return const GlobalMarketModel(
+      activeCryptocurrencies: 10000,
+      markets: 1000,
+      totalMarketCapUsd: 3000000000000,
+      totalVolumeUsd: 90000000000,
+      marketCapChangePercentage24hUsd: 1.2,
+    );
+  }
+
+  @override
+  Future<List<TrendingCoinModel>> getTrendingCoins() async {
+    return const [
+      TrendingCoinModel(id: 'bitcoin', name: 'Bitcoin', symbol: 'btc'),
+    ];
+  }
+
+  @override
+  Future<CoinDetailModel> getCoinDetail(String coinId) async {
+    return CoinDetailModel(id: coinId, symbol: 'btc', name: 'Bitcoin');
+  }
+
+  @override
+  Future<List<CoinModel>> searchCoins(String query) async {
+    return const [];
   }
 }
 

@@ -36,14 +36,23 @@ class TrendingCoinSection extends StatelessWidget {
                 color: colors.muted,
               ),
               const SizedBox(width: 5),
-              Text(
-                l10n.trending24h,
-                style: AppTextStyles.sectionLabel(colors.muted),
+              Expanded(
+                child: Text(
+                  l10n.trending24h,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.sectionLabel(colors.muted),
+                ),
               ),
-              const Spacer(),
-              Text(
-                l10n.coinCount(coins.length),
-                style: AppTextStyles.statLabel(colors.muted),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  l10n.coinCount(coins.length),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: AppTextStyles.statLabel(colors.muted),
+                ),
               ),
             ],
           ),
