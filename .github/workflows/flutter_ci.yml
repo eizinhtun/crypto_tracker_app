@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 env:
-  FLUTTER_VERSION: 'YOUR_FLUTTER_VERSION'
+  FLUTTER_VERSION: '3.44.0'
 
 jobs:
   quality:
