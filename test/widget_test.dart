@@ -13,6 +13,10 @@ void main() {
       expect(CurrencyFormatter.percentage(1.234), '1.23%');
     });
 
+    test('uses assignment-required CoinGecko page size', () {
+      expect(AppConstants.defaultPageSize, 20);
+    });
+
     test('uses HTTPS CoinGecko base URL', () {
       final uri = Uri.parse(ApiConstants.baseUrl);
 

@@ -35,7 +35,7 @@ class DetailContent extends StatelessWidget {
               url: detail.image,
               size: 44,
               iconSize: 36,
-              circular: false,
+              circular: true,
               fit: BoxFit.contain,
             ),
             const SizedBox(width: 16),
