@@ -258,7 +258,7 @@ void main() {
     late Completer<Result<DataResult<List<Coin>>>> newerSearch;
 
     blocTest<CoinListViewModel, CoinListState>(
-      'Given older slower search finishes after newer search, then older result does not overwrite newer state',
+      'Given older search finishes after newer search, when both complete, then older result is ignored',
       build: () {
         olderSearch = Completer<Result<DataResult<List<Coin>>>>();
         newerSearch = Completer<Result<DataResult<List<Coin>>>>();
@@ -307,7 +307,7 @@ void main() {
     late Completer<Result<DataResult<List<Coin>>>> search;
 
     blocTest<CoinListViewModel, CoinListState>(
-      'Given search results are shown, when search is cleared, then browse list is restored and pagination resumes',
+      'Given search results are shown, when search query is cleared, then normal paginated list is restored',
       build: () {
         search = Completer<Result<DataResult<List<Coin>>>>();
         when(() => repository.searchCoins('eth')).thenAnswer(
@@ -565,7 +565,7 @@ void main() {
     );
 
     blocTest<CoinListViewModel, CoinListState>(
-      'Given page 1 exists and page 2 contains duplicate IDs, when next page loads, then duplicates are not appended',
+      'Given page 2 contains duplicate coin ids, when next page loads, then duplicates are not appended',
       build: () {
         when(
           () => repository.getCoins(
