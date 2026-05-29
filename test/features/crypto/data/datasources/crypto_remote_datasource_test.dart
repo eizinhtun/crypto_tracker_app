@@ -233,6 +233,58 @@ void main() {
     });
 
     test(
+        'Given search market enrichment is rate limited, when searching, then search identity rows are returned',
+        () async {
+      final requestedPaths = <String>[];
+      final dataSource = _createDataSource(
+        _MockDioAdapter(
+          responseFor: (options) {
+            requestedPaths.add(options.uri.path);
+
+            if (options.uri.path.endsWith(ApiConstants.search)) {
+              return ResponseBody.fromString(
+                jsonEncode({
+                  'coins': [
+                    {
+                      'id': 'bitcoin',
+                      'symbol': 'btc',
+                      'name': 'Bitcoin',
+                      'large': 'https://example.com/btc.png',
+                    },
+                  ],
+                }),
+                200,
+                headers: _jsonHeaders,
+              );
+            }
+
+            if (options.uri.path.endsWith(ApiConstants.coinsMarkets)) {
+              return ResponseBody.fromString(
+                '{"error":"rate limited"}',
+                429,
+                statusMessage: 'Too Many Requests',
+                headers: _jsonHeaders,
+              );
+            }
+
+            fail('Unexpected request: ${options.uri}');
+          },
+        ),
+      );
+
+      final coins = await dataSource.searchCoins('bitcoin');
+
+      expect(requestedPaths, hasLength(2));
+      expect(requestedPaths[0], endsWith(ApiConstants.search));
+      expect(requestedPaths[1], endsWith(ApiConstants.coinsMarkets));
+      expect(coins, hasLength(1));
+      expect(coins.single.id, 'bitcoin');
+      expect(coins.single.currentPrice, isNull);
+      expect(coins.single.marketCap, isNull);
+      expect(coins.single.image, 'https://example.com/btc.png');
+    });
+
+    test(
         'Given CoinGecko returns 429, when request fails, then retry metadata is mapped',
         () async {
       final dataSource = _createDataSource(

@@ -7,6 +7,7 @@ import 'package:crypto_tracker_app/core/di/injection_container.dart';
 import 'package:crypto_tracker_app/core/error/exceptions.dart';
 import 'package:crypto_tracker_app/core/localization/app_localizations.dart';
 import 'package:crypto_tracker_app/core/network/network_info.dart';
+import 'package:crypto_tracker_app/core/theme/app_theme.dart';
 import 'package:crypto_tracker_app/features/crypto/data/cache/crypto_cache_records.dart';
 import 'package:crypto_tracker_app/features/crypto/data/datasources/crypto_local_datasource.dart';
 import 'package:crypto_tracker_app/features/crypto/data/datasources/crypto_remote_datasource.dart';
@@ -152,6 +153,96 @@ void main() {
       expect(find.byIcon(Icons.star_sharp), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'Given cached markets exist, when app restarts offline in Myanmar dark mode, then localized cached UI is shown',
+    (tester) async {
+      final networkInfo = _MutableNetworkInfo(isConnected: true);
+
+      _registerAppDependencies(
+        networkInfo: networkInfo,
+        remoteDataSource: const _FakeRemoteDataSource(),
+      );
+      final firstViewModel = await _createLoadedViewModel(tester);
+      addTearDown(firstViewModel.close);
+      await tester.pumpWidget(_TestMarketsApp(viewModel: firstViewModel));
+      await tester.pump();
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await resetDependencies(dispose: false);
+
+      networkInfo.connected = false;
+      _registerAppDependencies(
+        networkInfo: networkInfo,
+        remoteDataSource: const _FailingRemoteDataSource(),
+      );
+      final restartedViewModel = await _createLoadedViewModel(tester);
+      addTearDown(restartedViewModel.close);
+      await tester.pumpWidget(
+        _TestMarketsApp(
+          viewModel: restartedViewModel,
+          locale: const Locale('my'),
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      expect(restartedViewModel.state.isOffline, isTrue);
+      expect(restartedViewModel.state.hasCachedData, isTrue);
+      expect(
+        Theme.of(tester.element(find.byType(CoinListPage))).brightness,
+        Brightness.dark,
+      );
+      expect(find.text('စျေးကွက်များ'), findsOneWidget);
+      expect(find.textContaining('သိမ်းထားသော'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Given cached detail exists, when detail restarts offline in Myanmar dark mode, then localized cached UI is shown',
+    (tester) async {
+      final networkInfo = _MutableNetworkInfo(isConnected: true);
+
+      _registerAppDependencies(
+        networkInfo: networkInfo,
+        remoteDataSource: const _FakeRemoteDataSource(),
+      );
+      final firstViewModel = await _createLoadedDetailViewModel(tester);
+      addTearDown(firstViewModel.close);
+      await tester.pumpWidget(_TestDetailApp(viewModel: firstViewModel));
+      await tester.pump();
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await resetDependencies(dispose: false);
+
+      networkInfo.connected = false;
+      _registerAppDependencies(
+        networkInfo: networkInfo,
+        remoteDataSource: const _FailingRemoteDataSource(),
+      );
+      final restartedViewModel = await _createLoadedDetailViewModel(tester);
+      addTearDown(restartedViewModel.close);
+      await tester.pumpWidget(
+        _TestDetailApp(
+          viewModel: restartedViewModel,
+          locale: const Locale('my'),
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      expect(restartedViewModel.state.isOffline, isTrue);
+      expect(restartedViewModel.state.hasCachedData, isTrue);
+      expect(
+        Theme.of(tester.element(find.byType(CoinDetailPage))).brightness,
+        Brightness.dark,
+      );
+      expect(find.textContaining('သိမ်းထားသော'), findsOneWidget);
+      expect(find.textContaining('အဆင့်'), findsOneWidget);
+    },
+  );
 }
 
 Future<CoinListViewModel> _createLoadedViewModel(WidgetTester tester) async {
@@ -256,15 +347,25 @@ Future<void> _scrollUntilFound(WidgetTester tester, Finder finder) async {
 }
 
 class _TestDetailApp extends StatelessWidget {
-  const _TestDetailApp({required this.viewModel});
+  const _TestDetailApp({
+    required this.viewModel,
+    this.locale,
+    this.themeMode = ThemeMode.system,
+  });
 
   final CoinDetailViewModel viewModel;
+  final Locale? locale;
+  final ThemeMode themeMode;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: themeMode,
       home: BlocProvider.value(
         value: viewModel,
         child: const CoinDetailPage(coinId: 'bitcoin'),
@@ -274,15 +375,25 @@ class _TestDetailApp extends StatelessWidget {
 }
 
 class _TestMarketsApp extends StatelessWidget {
-  const _TestMarketsApp({required this.viewModel});
+  const _TestMarketsApp({
+    required this.viewModel,
+    this.locale,
+    this.themeMode = ThemeMode.system,
+  });
 
   final CoinListViewModel viewModel;
+  final Locale? locale;
+  final ThemeMode themeMode;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: themeMode,
       home: BlocProvider.value(
         value: viewModel,
         child: const CoinListPage(),

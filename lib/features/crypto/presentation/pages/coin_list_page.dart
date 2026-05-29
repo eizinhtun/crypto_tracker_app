@@ -7,9 +7,9 @@ import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/localization/locale_cubit.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../viewmodels/coin_list/coin_list_view_model.dart';
 import '../viewmodels/coin_list/coin_list_event.dart';
 import '../viewmodels/coin_list/coin_list_state.dart';
+import '../viewmodels/coin_list/coin_list_view_model.dart';
 import '../widgets/coin_list_item.dart';
 import '../widgets/coin_search_bar.dart';
 import '../widgets/empty_view.dart';
@@ -132,6 +132,10 @@ class _CoinListPageState extends State<CoinListPage> {
                       },
                     ),
                   ),
+                  if (state.query.trim().isNotEmpty)
+                    const SliverToBoxAdapter(
+                      child: _SearchResultLimitNote(),
+                    ),
                   const SliverToBoxAdapter(child: _CoinTableHeader()),
                   if (state.coins.isEmpty)
                     SliverFillRemaining(
@@ -332,6 +336,25 @@ class _MarketsPageColors {
       primaryText:
           isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
       muted: isDark ? AppColors.darkTextMuted : AppColors.lightTextSecondary,
+    );
+  }
+}
+
+class _SearchResultLimitNote extends StatelessWidget {
+  const _SearchResultLimitNote();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = _MarketsPageColors.from(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+      child: Text(
+        'Search shows top 20 results',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: AppTextStyles.coinMeta(colors.muted),
+      ),
     );
   }
 }

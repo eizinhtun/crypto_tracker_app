@@ -45,15 +45,19 @@ class CoinListItem extends StatelessWidget {
           child: Row(
             children: [
               SizedBox(
-                width: 34,
-                child: Text(
-                  '$rank',
-                  maxLines: 1,
-                  textAlign: TextAlign.left,
-                  style: AppTextStyles.rank(colors.muted),
+                width: 22,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '$rank',
+                    maxLines: 1,
+                    textAlign: TextAlign.left,
+                    style: AppTextStyles.rank(colors.muted),
+                  ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               CoinNetworkImage(
                 url: coin.image,
                 size: 38,

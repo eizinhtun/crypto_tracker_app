@@ -128,34 +128,60 @@ class CryptoRemoteDataSourceImpl implements CryptoRemoteDataSource {
       return const [];
     }
 
-    final marketsResponse = await _safeGet(
-      ApiConstants.coinsMarkets,
-      queryParameters: {
-        'vs_currency': AppConstants.defaultCurrency,
-        'ids': searchRows.map((coin) => coin.id).join(','),
-        'order': 'market_cap_desc',
-        'per_page': searchRows.length,
-        'page': 1,
-        'sparkline': false,
-        'price_change_percentage': '24h',
-      },
-    );
-    final marketsData = marketsResponse.data;
-
-    if (marketsData is! List) {
-      throw const ServerException('Unexpected search market response');
-    }
-
-    final marketRowsById = {
-      for (final coin in marketsData
-          .whereType<Map>()
-          .map((item) => CoinModel.fromJson(Map<String, dynamic>.from(item))))
-        coin.id: coin,
-    };
+    final marketRowsById = await _searchMarketRowsById(searchRows);
 
     return searchRows
         .map((coin) => marketRowsById[coin.id] ?? coin)
         .toList(growable: false);
+  }
+
+  Future<Map<String, CoinModel>> _searchMarketRowsById(
+    List<CoinModel> searchRows,
+  ) async {
+    final ids = searchRows
+        .map((coin) => coin.id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .take(AppConstants.defaultPageSize)
+        .toList(growable: false);
+
+    if (ids.isEmpty) {
+      return const {};
+    }
+
+    try {
+      final marketsResponse = await _safeGet(
+        ApiConstants.coinsMarkets,
+        queryParameters: {
+          'vs_currency': AppConstants.defaultCurrency,
+          'ids': ids.join(','),
+          'order': 'market_cap_desc',
+          'per_page': ids.length,
+          'page': 1,
+          'sparkline': false,
+          'price_change_percentage': '24h',
+        },
+      );
+
+      final marketsData = marketsResponse.data;
+
+      if (marketsData is! List) {
+        throw const ServerException('Unexpected search market response');
+      }
+
+      return {
+        for (final coin in marketsData.whereType<Map>().map(
+              (item) => CoinModel.fromJson(Map<String, dynamic>.from(item)),
+            ))
+          coin.id: coin,
+      };
+    } on RateLimitException {
+      return const {};
+    } on NetworkException {
+      return const {};
+    } on ServerException {
+      return const {};
+    }
   }
 
   List<CoinModel> _searchCoins(List<dynamic> coins) {
