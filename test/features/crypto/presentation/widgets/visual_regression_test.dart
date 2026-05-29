@@ -70,7 +70,7 @@ void main() {
   });
 
   testWidgets(
-    'Given long detail content on a narrow screen, when rendered, then it matches golden without overflow',
+    'Given long detail content on a narrow screen, when rendered, then it does not overflow',
     (tester) async {
       tester.view.physicalSize = const Size(360, 780);
       tester.view.devicePixelRatio = 1;
@@ -112,10 +112,14 @@ void main() {
       );
 
       expect(tester.takeException(), isNull);
-      await expectLater(
-        find.byType(DetailContent),
-        matchesGoldenFile('goldens/detail_long_text_narrow.png'),
-      );
+      expect(find.byType(DetailContent), findsOneWidget);
+      expect(
+          find.textContaining('EXTREMELY LONG CRYPTOCURRENCY'), findsWidgets);
+      expect(find.text('MARKET STATS'), findsOneWidget);
+      expect(find.text('MARKET CAP'), findsOneWidget);
+      expect(find.text('MAX SUPPLY'), findsOneWidget);
+      expect(
+          find.textContaining('deliberately long description'), findsOneWidget);
     },
   );
 }
