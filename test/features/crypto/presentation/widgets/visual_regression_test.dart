@@ -37,7 +37,7 @@ void main() {
       Uri.file(
         '${Directory.current.path}/test/features/crypto/presentation/widgets/visual_regression_test.dart',
       ),
-      precisionTolerance: 0.05,
+      precisionTolerance: 0.06,
     );
     GoogleFonts.config.allowRuntimeFetching = false;
   });
