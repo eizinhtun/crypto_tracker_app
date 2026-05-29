@@ -176,7 +176,6 @@ class _CoinListPageState extends State<CoinListPage> {
                     const SliverToBoxAdapter(
                       child: _SearchResultLimitNote(),
                     ),
-                  const SliverToBoxAdapter(child: _CoinTableHeader()),
                   if (state.coins.isEmpty)
                     SliverFillRemaining(
                       hasScrollBody: false,
@@ -186,7 +185,8 @@ class _CoinListPageState extends State<CoinListPage> {
                             : context.l10n.emptyCoins,
                       ),
                     )
-                  else
+                  else ...[
+                    const SliverToBoxAdapter(child: _CoinTableHeader()),
                     SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
@@ -237,6 +237,7 @@ class _CoinListPageState extends State<CoinListPage> {
                                 : 0),
                       ),
                     ),
+                  ],
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 ],
               ),
