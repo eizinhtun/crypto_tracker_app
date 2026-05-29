@@ -344,7 +344,7 @@ class _DetailColors {
           isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
       secondaryText:
           isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-      bodyText: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+      bodyText: isDark ? const Color(0xffa29e9a) : const Color(0xff676561),
     );
   }
 }
