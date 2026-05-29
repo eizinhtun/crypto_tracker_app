@@ -97,7 +97,10 @@ class DetailContent extends StatelessWidget {
         const SizedBox(height: 12),
         Text(
           descriptionText.isNotEmpty ? descriptionText : l10n.noDescription,
-          style: AppTextStyles.body(colors.bodyText),
+          style: AppTextStyles.body(
+            colors.bodyText,
+            context: context,
+          ),
         ),
         if ((detail.homepage ?? '').isNotEmpty) ...[
           const SizedBox(height: 20),
@@ -105,7 +108,7 @@ class DetailContent extends StatelessWidget {
             l10n.sourceHost(_sourceHost(detail.homepage!)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.topMeta(colors.secondaryText),
+            style: AppTextStyles.topMeta(colors.secondaryText,context: context),
           ),
         ],
       ],
@@ -163,14 +166,16 @@ class _PriceHeader extends StatelessWidget {
           name.toUpperCase(),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTextStyles.topMeta(colors.secondaryText),
+          style: AppTextStyles.topMeta(colors.secondaryText,context: context),
         ),
         const SizedBox(height: 4),
         Text(
           price,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTextStyles.heroPrice(colors.primaryText),
+          style: AppTextStyles.heroPrice(
+            colors.primaryText,
+          ),
         ),
         const SizedBox(height: 6),
         Row(
@@ -215,7 +220,8 @@ class _SectionTitle extends StatelessWidget {
 
     return Text(
       title,
-      style: AppTextStyles.sectionLabel(colors.secondaryText),
+      style: AppTextStyles.sectionLabel(colors.secondaryText,
+            context: context,),
     );
   }
 }
@@ -282,7 +288,8 @@ class _StatCard extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.statLabel(colors.secondaryText),
+            style: AppTextStyles.statLabel(colors.secondaryText,
+            context: context,),
           ),
           const SizedBox(height: 5),
           Text(

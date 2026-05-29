@@ -62,10 +62,16 @@ class _CoinSearchBarState extends State<CoinSearchBar> {
         child: TextField(
           controller: _controller,
           textInputAction: TextInputAction.search,
-          style: AppTextStyles.searchHint(textColor),
+          style: AppTextStyles.searchHint(
+            textColor,
+            context: context,
+          ),
           decoration: InputDecoration(
             hintText: l10n.searchHint,
-            hintStyle: AppTextStyles.searchHint(mutedColor),
+            hintStyle: AppTextStyles.searchHint(
+              mutedColor,
+              context: context,
+            ),
             prefixIcon: Icon(Icons.search, color: mutedColor, size: 21),
             suffixIcon: ValueListenableBuilder<TextEditingValue>(
               valueListenable: _controller,

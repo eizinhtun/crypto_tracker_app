@@ -33,7 +33,10 @@ class OfflineBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: AppTextStyles.body(colorScheme.onErrorContainer),
+              style: AppTextStyles.body(
+                colorScheme.onErrorContainer,
+                context: context,
+              ),
             ),
           ),
         ],

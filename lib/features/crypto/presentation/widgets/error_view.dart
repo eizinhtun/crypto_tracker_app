@@ -32,6 +32,7 @@ class ErrorView extends StatelessWidget {
               textAlign: TextAlign.center,
               style: AppTextStyles.body(
                 Theme.of(context).colorScheme.onSurface,
+                context: context,
               ),
             ),
             if (onRetry != null) ...[
@@ -43,6 +44,7 @@ class ErrorView extends StatelessWidget {
                   context.l10n.retry,
                   style: AppTextStyles.body(
                     Theme.of(context).colorScheme.onPrimary,
+                    context: context,
                   ),
                 ),
               ),

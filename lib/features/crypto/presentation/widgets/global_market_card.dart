@@ -49,7 +49,9 @@ class GlobalMarketCard extends StatelessWidget {
                 CurrencyFormatter.percentage(change),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.percentageBadge(changeColor),
+                style: AppTextStyles.percentageBadge(
+                  changeColor,
+                ),
               ),
             ),
           ),
@@ -95,7 +97,8 @@ class _MarketMetric extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTextStyles.statLabel(colors.muted),
+          style: AppTextStyles.statLabel(colors.muted,
+            context: context,),
         ),
         const SizedBox(height: 5),
         Row(

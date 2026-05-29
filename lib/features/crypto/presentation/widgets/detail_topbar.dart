@@ -45,13 +45,14 @@ class DetailTopBar extends StatelessWidget {
                     '${detail.symbol.toUpperCase()}  ·  ',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.topMeta(secondaryText),
+                    style:
+                        AppTextStyles.topMeta(secondaryText, context: context),
                   ),
                   Text(
                     l10n.rankLabel(rank),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.topMeta(rankText),
+                    style: AppTextStyles.topMeta(rankText, context: context),
                   ),
                 ],
               ),

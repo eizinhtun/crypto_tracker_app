@@ -43,7 +43,10 @@ class TrendingCoinSection extends StatelessWidget {
                     l10n.trending24h,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.sectionLabel(colors.muted),
+                    style: AppTextStyles.sectionLabel(
+                      colors.muted,
+                      context: context,
+                    ),
                   ),
                 ],
               ),
@@ -53,7 +56,10 @@ class TrendingCoinSection extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.end,
-                  style: AppTextStyles.statLabel(colors.muted),
+                  style: AppTextStyles.statLabel(
+                    colors.muted,
+                    context: context,
+                  ),
                 ),
               ),
             ],

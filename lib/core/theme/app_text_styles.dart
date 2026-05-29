@@ -4,8 +4,24 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTextStyles {
   AppTextStyles._();
 
-  // Large page title: "Markets"
-  static TextStyle pageTitle(Color color) {
+  static bool isMyanmar(BuildContext context) {
+    return Localizations.localeOf(context).languageCode == 'my';
+  }
+
+  // Large page title: "Markets" / Myanmar title
+  static TextStyle pageTitle(
+    Color color, {
+    BuildContext? context,
+  }) {
+    if (context != null && isMyanmar(context)) {
+      return _notoSansMyanmar(
+        fontSize: 30,
+        fontWeight: FontWeight.w700,
+        height: 1.25,
+        color: color,
+      );
+    }
+
     return _spaceGrotesk(
       fontSize: 34,
       fontWeight: FontWeight.w500,
@@ -16,6 +32,7 @@ class AppTextStyles {
   }
 
   // Detail price: "$2,095.85"
+  // Keep mono font for numbers in both English and Myanmar mode.
   static TextStyle heroPrice(Color color) {
     return _jetBrainsMono(
       fontSize: 34,
@@ -38,6 +55,7 @@ class AppTextStyles {
   }
 
   // Coin name: "Bitcoin", "Ethereum"
+  // Coin names are usually Latin, so keep Space Grotesk.
   static TextStyle coinName(Color color) {
     return _spaceGrotesk(
       fontSize: 17,
@@ -49,6 +67,7 @@ class AppTextStyles {
   }
 
   // Small coin metadata: "BTC · $1.54T"
+  // Keep mono because it contains symbol/numbers.
   static TextStyle coinMeta(Color color) {
     return _jetBrainsMono(
       fontSize: 11,
@@ -60,7 +79,20 @@ class AppTextStyles {
   }
 
   // Uppercase section labels: "MARKET STATS", "ABOUT ETHEREUM"
-  static TextStyle sectionLabel(Color color) {
+  // If this text is localized into Myanmar, pass context.
+  static TextStyle sectionLabel(
+    Color color, {
+    BuildContext? context,
+  }) {
+    if (context != null && isMyanmar(context)) {
+      return _notoSansMyanmar(
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        height: 1.45,
+        color: color,
+      );
+    }
+
     return _jetBrainsMono(
       fontSize: 11,
       fontWeight: FontWeight.w700,
@@ -71,7 +103,20 @@ class AppTextStyles {
   }
 
   // Small card label: "MARKET CAP", "VOLUME 24H"
-  static TextStyle statLabel(Color color) {
+  // If translated to Myanmar, pass context.
+  static TextStyle statLabel(
+    Color color, {
+    BuildContext? context,
+  }) {
+    if (context != null && isMyanmar(context)) {
+      return _notoSansMyanmar(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        height: 1.45,
+        color: color,
+      );
+    }
+
     return _jetBrainsMono(
       fontSize: 10,
       fontWeight: FontWeight.w700,
@@ -82,6 +127,7 @@ class AppTextStyles {
   }
 
   // Stat value: "$253.15B", "120.28M ETH"
+  // Keep mono for numbers.
   static TextStyle statValue(Color color) {
     return _jetBrainsMono(
       fontSize: 15,
@@ -104,7 +150,17 @@ class AppTextStyles {
   }
 
   // Header small text: "ETH · RANK #2", "LIVE / COINGECKO"
-  static TextStyle topMeta(Color color) {
+  // Usually not localized, keep mono.
+  static TextStyle topMeta(Color color, {BuildContext? context}) {
+    if (context != null && isMyanmar(context)) {
+      return _notoSansMyanmar(
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        height: 1.25,
+        color: color,
+      );
+    }
+
     return _jetBrainsMono(
       fontSize: 12,
       fontWeight: FontWeight.w700,
@@ -114,8 +170,20 @@ class AppTextStyles {
     );
   }
 
-  // Body paragraph: About Ethereum
-  static TextStyle body(Color color) {
+  // Body paragraph / error / empty / offline messages
+  static TextStyle body(
+    Color color, {
+    BuildContext? context,
+  }) {
+    if (context != null && isMyanmar(context)) {
+      return _notoSansMyanmar(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        height: 1.65,
+        color: color,
+      );
+    }
+
     return _spaceGrotesk(
       fontSize: 14,
       fontWeight: FontWeight.w500,
@@ -125,8 +193,20 @@ class AppTextStyles {
     );
   }
 
-  // Search hint: "Search coins"
-  static TextStyle searchHint(Color color) {
+  // Search hint: "Search coins" / Myanmar search hint
+  static TextStyle searchHint(
+    Color color, {
+    BuildContext? context,
+  }) {
+    if (context != null && isMyanmar(context)) {
+      return _notoSansMyanmar(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        height: 1.4,
+        color: color,
+      );
+    }
+
     return _spaceGrotesk(
       fontSize: 15,
       fontWeight: FontWeight.w500,
@@ -137,7 +217,20 @@ class AppTextStyles {
   }
 
   // Table header: "#", "ASSET", "PRICE · 24H"
-  static TextStyle tableHeader(Color color) {
+  // If table labels are localized, pass context.
+  static TextStyle tableHeader(
+    Color color, {
+    BuildContext? context,
+  }) {
+    if (context != null && isMyanmar(context)) {
+      return _notoSansMyanmar(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        height: 1.35,
+        color: color,
+      );
+    }
+
     return _jetBrainsMono(
       fontSize: 10,
       fontWeight: FontWeight.w700,
@@ -153,6 +246,32 @@ class AppTextStyles {
       fontSize: 12,
       fontWeight: FontWeight.w600,
       height: 1.0,
+      color: color,
+    );
+  }
+
+  // General localized UI label
+  // Use this for buttons, banners, helper texts.
+  static TextStyle localizedUi(
+    BuildContext context,
+    Color color, {
+    double fontSize = 13,
+    FontWeight fontWeight = FontWeight.w600,
+  }) {
+    if (isMyanmar(context)) {
+      return _notoSansMyanmar(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        height: 1.55,
+        color: color,
+      );
+    }
+
+    return _spaceGrotesk(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      height: 1.3,
+      letterSpacing: -0.1,
       color: color,
     );
   }
@@ -201,6 +320,32 @@ class AppTextStyles {
     }
 
     return GoogleFonts.jetBrainsMono(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      height: height,
+      letterSpacing: letterSpacing,
+      color: color,
+    );
+  }
+
+  static TextStyle _notoSansMyanmar({
+    required double fontSize,
+    required FontWeight fontWeight,
+    required double height,
+    required Color color,
+    double? letterSpacing,
+  }) {
+    if (!GoogleFonts.config.allowRuntimeFetching) {
+      return TextStyle(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        height: height,
+        letterSpacing: letterSpacing,
+        color: color,
+      );
+    }
+
+    return GoogleFonts.notoSansMyanmar(
       fontSize: fontSize,
       fontWeight: fontWeight,
       height: height,

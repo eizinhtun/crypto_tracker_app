@@ -284,14 +284,19 @@ class _MarketsHeader extends StatelessWidget {
                       '•',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.topMeta(colors.muted)
-                          .copyWith(fontSize: 28),
+                      style:
+                          AppTextStyles.topMeta(colors.muted, context: context)
+                              .copyWith(fontSize: 28),
                     ),
-                    Text(
-                      ' ${l10n.liveCoinGecko}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.topMeta(colors.muted),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        l10n.liveCoinGecko,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.topMeta(colors.muted,
+                            context: context),
+                      ),
                     ),
                   ],
                 ),
@@ -299,7 +304,11 @@ class _MarketsHeader extends StatelessWidget {
                 Text(
                   l10n.markets,
                   maxLines: 1,
-                  style: AppTextStyles.pageTitle(colors.primaryText),
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.pageTitle(
+                    colors.primaryText,
+                    context: context,
+                  ),
                 ),
               ],
             ),
@@ -344,7 +353,10 @@ class _CoinTableHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = _MarketsPageColors.from(context);
     final l10n = context.l10n;
-    final labelStyle = AppTextStyles.tableHeader(colors.muted);
+    final labelStyle = AppTextStyles.tableHeader(
+      colors.muted,
+      context: context,
+    );
 
     return Container(
       height: 38,
@@ -368,13 +380,22 @@ class _CoinTableHeader extends StatelessWidget {
               style: labelStyle,
             ),
           ),
-          Text(
-            l10n.price24h,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.end,
-            style: labelStyle,
-          ),
+          Flexible(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Text(
+                  l10n.price24h,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: labelStyle,
+                ),
+              ),
+            ),
+          )
         ],
       ),
     );
@@ -428,7 +449,12 @@ class _SearchResultLimitNote extends StatelessWidget {
         context.l10n.searchResultLimitNote,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: AppTextStyles.coinMeta(colors.muted),
+        style: AppTextStyles.localizedUi(
+          context,
+          colors.muted,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

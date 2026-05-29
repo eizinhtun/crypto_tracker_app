@@ -29,6 +29,7 @@ class EmptyView extends StatelessWidget {
               textAlign: TextAlign.center,
               style: AppTextStyles.body(
                 Theme.of(context).colorScheme.onSurface,
+                context: context,
               ),
             ),
           ],
