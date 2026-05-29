@@ -97,8 +97,10 @@ class _MarketMetric extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTextStyles.statLabel(colors.muted,
-            context: context,),
+          style: AppTextStyles.statLabel(
+            colors.muted,
+            context: context,
+          ),
         ),
         const SizedBox(height: 5),
         Row(

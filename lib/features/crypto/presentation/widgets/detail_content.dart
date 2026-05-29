@@ -108,7 +108,8 @@ class DetailContent extends StatelessWidget {
             l10n.sourceHost(_sourceHost(detail.homepage!)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.topMeta(colors.secondaryText,context: context),
+            style:
+                AppTextStyles.topMeta(colors.secondaryText, context: context),
           ),
         ],
       ],
@@ -166,7 +167,7 @@ class _PriceHeader extends StatelessWidget {
           name.toUpperCase(),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTextStyles.topMeta(colors.secondaryText,context: context),
+          style: AppTextStyles.topMeta(colors.secondaryText, context: context),
         ),
         const SizedBox(height: 4),
         Text(
@@ -220,8 +221,10 @@ class _SectionTitle extends StatelessWidget {
 
     return Text(
       title,
-      style: AppTextStyles.sectionLabel(colors.secondaryText,
-            context: context,),
+      style: AppTextStyles.sectionLabel(
+        colors.secondaryText,
+        context: context,
+      ),
     );
   }
 }
@@ -288,8 +291,10 @@ class _StatCard extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.statLabel(colors.secondaryText,
-            context: context,),
+            style: AppTextStyles.statLabel(
+              colors.secondaryText,
+              context: context,
+            ),
           ),
           const SizedBox(height: 5),
           Text(
