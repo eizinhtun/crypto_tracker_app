@@ -25,6 +25,7 @@ class DetailTopBar extends StatelessWidget {
     final l10n = context.l10n;
     final secondaryText =
         isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final rankText = isDark ? Colors.white : Colors.black;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
@@ -37,11 +38,22 @@ class DetailTopBar extends StatelessWidget {
           ),
           Expanded(
             child: Center(
-              child: Text(
-                '${detail.symbol.toUpperCase()}  ·  ${l10n.rankLabel(rank)}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.topMeta(secondaryText),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${detail.symbol.toUpperCase()}  ·  ',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.topMeta(secondaryText),
+                  ),
+                  Text(
+                    l10n.rankLabel(rank),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.topMeta(rankText),
+                  ),
+                ],
               ),
             ),
           ),

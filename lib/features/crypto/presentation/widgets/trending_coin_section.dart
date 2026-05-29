@@ -29,22 +29,24 @@ class TrendingCoinSection extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(
-                Icons.local_fire_department,
-                size: 14,
-                color: colors.muted,
+              Row(
+                children: [
+                  Icon(
+                    Icons.local_fire_department,
+                    size: 14,
+                    color: colors.muted,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    l10n.trending24h,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.sectionLabel(colors.muted),
+                  ),
+                ],
               ),
-              const SizedBox(width: 5),
-              Expanded(
-                child: Text(
-                  l10n.trending24h,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.sectionLabel(colors.muted),
-                ),
-              ),
-              const SizedBox(width: 8),
               Flexible(
                 child: Text(
                   l10n.coinCount(coins.length),

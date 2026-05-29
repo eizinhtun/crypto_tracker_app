@@ -278,11 +278,22 @@ class _MarketsHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '•  ${l10n.liveCoinGecko}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.topMeta(colors.muted),
+                Row(
+                  children: [
+                    Text(
+                      '•',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.topMeta(colors.muted)
+                          .copyWith(fontSize: 28),
+                    ),
+                    Text(
+                      ' ${l10n.liveCoinGecko}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.topMeta(colors.muted),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -346,7 +357,7 @@ class _CoinTableHeader extends StatelessWidget {
       child: Row(
         children: [
           SizedBox(
-            width: 32,
+            width: 22,
             child: Text('#', style: labelStyle),
           ),
           Expanded(
@@ -357,15 +368,12 @@ class _CoinTableHeader extends StatelessWidget {
               style: labelStyle,
             ),
           ),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              l10n.price24h,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.end,
-              style: labelStyle,
-            ),
+          Text(
+            l10n.price24h,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.end,
+            style: labelStyle,
           ),
         ],
       ),
