@@ -78,8 +78,8 @@ CoinGecko integration is isolated in `CryptoRemoteDataSource` behind
 - `/global`
 - `/search/trending`
 - `/coins/{id}`
-- `/search` for submitted search queries, parsed directly to avoid extra
-  CoinGecko calls
+- `/search` followed by `/coins/markets?ids=...` for submitted search rows with
+  live price, market cap, and 24h change
 
 `DioClient` owns:
 

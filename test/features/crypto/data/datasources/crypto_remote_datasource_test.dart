@@ -130,7 +130,7 @@ void main() {
     });
 
     test(
-        'Given search response coins, when searching, then one CoinGecko search request maps rows',
+        'Given search response coins, when searching, then market data is fetched for numbered rows',
         () async {
       final requestedPaths = <String>[];
       final dataSource = _createDataSource(
@@ -162,6 +162,37 @@ void main() {
               );
             }
 
+            if (options.uri.path.endsWith(ApiConstants.coinsMarkets)) {
+              expect(
+                options.uri.queryParameters['ids'],
+                'bitcoin,wrapped-bitcoin',
+              );
+              expect(options.uri.queryParameters['vs_currency'], 'usd');
+
+              return ResponseBody.fromString(
+                jsonEncode([
+                  {
+                    'id': 'wrapped-bitcoin',
+                    'symbol': 'wbtc',
+                    'name': 'Wrapped Bitcoin',
+                    'current_price': 99950,
+                    'market_cap': 10000000000,
+                    'price_change_percentage_24h': -0.2,
+                  },
+                  {
+                    'id': 'bitcoin',
+                    'symbol': 'btc',
+                    'name': 'Bitcoin',
+                    'current_price': 100000,
+                    'market_cap': 2000000000000,
+                    'price_change_percentage_24h': 1.2,
+                  },
+                ]),
+                200,
+                headers: _jsonHeaders,
+              );
+            }
+
             fail('Unexpected request: ${options.uri}');
           },
         ),
@@ -169,11 +200,11 @@ void main() {
 
       final coins = await dataSource.searchCoins('bit');
 
-      expect(requestedPaths, hasLength(1));
+      expect(requestedPaths, hasLength(2));
       expect(coins.map((coin) => coin.id), ['bitcoin', 'wrapped-bitcoin']);
-      expect(coins.first.image, 'https://example.com/btc.png');
-      expect(coins.first.currentPrice, isNull);
-      expect(coins.first.marketCap, isNull);
+      expect(coins.first.currentPrice, 100000);
+      expect(coins.first.marketCap, 2000000000000);
+      expect(coins.first.priceChangePercentage24h, 1.2);
     });
 
     test(

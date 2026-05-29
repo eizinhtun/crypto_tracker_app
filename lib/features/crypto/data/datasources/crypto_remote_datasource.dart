@@ -123,7 +123,39 @@ class CryptoRemoteDataSourceImpl implements CryptoRemoteDataSource {
       throw const ServerException('Unexpected search response');
     }
 
-    return _searchCoins(searchData['coins'] as List);
+    final searchRows = _searchCoins(searchData['coins'] as List);
+    if (searchRows.isEmpty) {
+      return const [];
+    }
+
+    final marketsResponse = await _safeGet(
+      ApiConstants.coinsMarkets,
+      queryParameters: {
+        'vs_currency': AppConstants.defaultCurrency,
+        'ids': searchRows.map((coin) => coin.id).join(','),
+        'order': 'market_cap_desc',
+        'per_page': searchRows.length,
+        'page': 1,
+        'sparkline': false,
+        'price_change_percentage': '24h',
+      },
+    );
+    final marketsData = marketsResponse.data;
+
+    if (marketsData is! List) {
+      throw const ServerException('Unexpected search market response');
+    }
+
+    final marketRowsById = {
+      for (final coin in marketsData
+          .whereType<Map>()
+          .map((item) => CoinModel.fromJson(Map<String, dynamic>.from(item))))
+        coin.id: coin,
+    };
+
+    return searchRows
+        .map((coin) => marketRowsById[coin.id] ?? coin)
+        .toList(growable: false);
   }
 
   List<CoinModel> _searchCoins(List<dynamic> coins) {
