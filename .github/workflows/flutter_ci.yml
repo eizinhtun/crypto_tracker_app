@@ -51,7 +51,7 @@ jobs:
 
       - name: Check workflow Flutter version placeholder
         run: |
-          if grep -R "YOUR_FLUTTER_VERSION" .github/workflows/*.yml 2>/dev/null; then
+          if grep -R "3.44.0" .github/workflows/*.yml 2>/dev/null; then
             echo "❌ Flutter version placeholder found. Replace YOUR_FLUTTER_VERSION with a real version."
             exit 1
           fi
