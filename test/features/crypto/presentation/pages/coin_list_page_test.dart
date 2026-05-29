@@ -2,6 +2,7 @@ import 'package:crypto_tracker_app/core/constants/app_constants.dart';
 import 'package:crypto_tracker_app/core/error/failures.dart';
 import 'package:crypto_tracker_app/core/error/result.dart';
 import 'package:crypto_tracker_app/core/localization/app_localizations.dart';
+import 'package:crypto_tracker_app/core/localization/locale_cubit.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/coin.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/coin_detail.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/global_market.dart';
@@ -60,6 +61,56 @@ void main() {
         find.text('Too many requests. Please wait and try again.'),
         findsOneWidget,
       );
+    },
+  );
+
+  testWidgets(
+    'Given markets page is visible, when language toggle is tapped, then localized labels update',
+    (tester) async {
+      final repository = _LoadMoreFailureRepository();
+      final localeCubit = LocaleCubit();
+      final viewModel = CoinListViewModel(
+        getCoinsUseCase: GetCoinsUseCase(repository),
+        getCryptoOverviewUseCase: GetCryptoOverviewUseCase(repository),
+        getFavoriteStatusUseCase: GetFavoriteStatusUseCase(repository),
+        searchCoinsUseCase: SearchCoinsUseCase(repository),
+        toggleFavoriteUseCase: ToggleFavoriteUseCase(repository),
+      );
+      addTearDown(localeCubit.close);
+      addTearDown(viewModel.close);
+
+      await tester.pumpWidget(
+        BlocProvider.value(
+          value: localeCubit,
+          child: BlocBuilder<LocaleCubit, Locale?>(
+            builder: (context, locale) {
+              return MaterialApp(
+                locale: locale,
+                supportedLocales: AppLocalizations.supportedLocales,
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                home: BlocProvider.value(
+                  value: viewModel,
+                  child: const CoinListPage(),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      viewModel.add(const CoinListStarted());
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Markets'), findsOneWidget);
+      expect(find.text('ASSET'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Switch language'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('စျေးကွက်များ'), findsOneWidget);
+      expect(find.text('ပိုင်ဆိုင်မှု'), findsOneWidget);
     },
   );
 }
