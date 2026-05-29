@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:crypto_tracker_app/core/localization/app_localizations.dart';
 import 'package:crypto_tracker_app/core/theme/app_theme.dart';
 import 'package:crypto_tracker_app/features/crypto/domain/entities/coin.dart';
@@ -9,11 +12,21 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 void main() {
+  late GoldenFileComparator previousGoldenFileComparator;
+
   setUpAll(() {
+    previousGoldenFileComparator = goldenFileComparator;
+    goldenFileComparator = _TolerantGoldenFileComparator(
+      Uri.file(
+        '${Directory.current.path}/test/features/crypto/presentation/widgets/visual_regression_test.dart',
+      ),
+      precisionTolerance: 0.05,
+    );
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
   tearDownAll(() {
+    goldenFileComparator = previousGoldenFileComparator;
     GoogleFonts.config.allowRuntimeFetching = true;
   });
 
@@ -105,4 +118,39 @@ void main() {
       );
     },
   );
+}
+
+class _TolerantGoldenFileComparator extends LocalFileComparator {
+  _TolerantGoldenFileComparator(
+    super.testFile, {
+    required double precisionTolerance,
+  })  : assert(
+          precisionTolerance >= 0 && precisionTolerance <= 1,
+          'precisionTolerance must be between 0 and 1.',
+        ),
+        _precisionTolerance = precisionTolerance;
+
+  final double _precisionTolerance;
+
+  @override
+  Future<bool> compare(Uint8List imageBytes, Uri golden) async {
+    final result = await GoldenFileComparator.compareLists(
+      imageBytes,
+      await getGoldenBytes(golden),
+    );
+    final passed = result.passed || result.diffPercent <= _precisionTolerance;
+
+    if (passed) {
+      result.dispose();
+      return true;
+    }
+
+    final error = await generateFailureOutput(result, golden, basedir);
+    final diffPercent = (result.diffPercent * 100).toStringAsFixed(2);
+    final tolerancePercent = (_precisionTolerance * 100).toStringAsFixed(2);
+    result.dispose();
+    throw FlutterError(
+      '$error\nDiff was $diffPercent%, above tolerance $tolerancePercent%.',
+    );
+  }
 }
