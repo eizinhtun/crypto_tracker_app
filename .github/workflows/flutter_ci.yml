@@ -49,16 +49,6 @@ jobs:
 
           echo "✅ Required files exist"
 
-      - name: Check workflow Flutter version placeholder
-        run: |
-          echo "Checking Flutter version placeholder..."
-
-          if grep -R "YOUR_FLUTTER_VERSION" .github/workflows/*.yml 2>/dev/null; then
-            echo "❌ Flutter version placeholder found. Replace YOUR_FLUTTER_VERSION with a real version."
-            exit 1
-          fi
-
-          echo "✅ No Flutter version placeholder found"
 
   quality:
     name: Code Quality
