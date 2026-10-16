@@ -1,4 +1,15 @@
 abstract final class LocalizationKeys {
+  static const emptyFavorites = 'emptyFavorites';
+  static const emptyFavoritesHint = 'emptyFavoritesHint';
+  static const noFavoriteMatches = 'noFavoriteMatches';
+  static const browseMarkets = 'browseMarkets';
+  static const searchFavorites = 'searchFavorites';
+  static const sortFavorites = 'sortFavorites';
+  static const sortName = 'sortName';
+  static const sortMarketCap = 'sortMarketCap';
+  static const sortPrice = 'sortPrice';
+  static const sortChange = 'sortChange';
+
   static const appName = 'appName';
   static const searchHint = 'searchHint';
   static const favorites = 'favorites';

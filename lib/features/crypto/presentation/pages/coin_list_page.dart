@@ -313,7 +313,20 @@ class _MarketsHeader extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 16),
+          IconButton(
+            tooltip: l10n.favorites,
+            icon: const Icon(Icons.star_border),
+            onPressed: () async {
+              await context.pushNamed(AppRouteNames.favorites);
+              if (context.mounted) {
+                final model = context.read<CoinListViewModel>();
+                for (final coin in model.state.coins) {
+                  model.add(CoinListFavoriteStatusRequested(coin.id));
+                }
+              }
+            },
+          ),
+          const SizedBox(width: 8),
           Tooltip(
             message: l10n.switchLanguage,
             child: Material(
