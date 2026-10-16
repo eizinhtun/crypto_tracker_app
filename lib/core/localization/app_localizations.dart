@@ -30,6 +30,17 @@ class AppLocalizations {
         const AppLocalizations(fallbackLocale);
   }
 
+  String get emptyFavorites => _text(LocalizationKeys.emptyFavorites);
+  String get emptyFavoritesHint => _text(LocalizationKeys.emptyFavoritesHint);
+  String get noFavoriteMatches => _text(LocalizationKeys.noFavoriteMatches);
+  String get browseMarkets => _text(LocalizationKeys.browseMarkets);
+  String get searchFavorites => _text(LocalizationKeys.searchFavorites);
+  String get sortFavorites => _text(LocalizationKeys.sortFavorites);
+  String get sortName => _text(LocalizationKeys.sortName);
+  String get sortMarketCap => _text(LocalizationKeys.sortMarketCap);
+  String get sortPrice => _text(LocalizationKeys.sortPrice);
+  String get sortChange => _text(LocalizationKeys.sortChange);
+
   String get appName => _text(LocalizationKeys.appName);
   String get searchHint => _text(LocalizationKeys.searchHint);
   String get favorites => _text(LocalizationKeys.favorites);
@@ -171,6 +182,17 @@ class _AppLocalizationsDelegate
 
 const _localizedValues = <String, Map<String, String>>{
   'en': {
+    LocalizationKeys.emptyFavorites: 'No favorites yet',
+    LocalizationKeys.emptyFavoritesHint:
+        'Star coins in Markets to keep them here.',
+    LocalizationKeys.noFavoriteMatches: 'No matching favorites',
+    LocalizationKeys.browseMarkets: 'Browse markets',
+    LocalizationKeys.searchFavorites: 'Search favorites',
+    LocalizationKeys.sortFavorites: 'Sort favorites',
+    LocalizationKeys.sortName: 'Name (A–Z)',
+    LocalizationKeys.sortMarketCap: 'Market cap (high to low)',
+    LocalizationKeys.sortPrice: 'Price (high to low)',
+    LocalizationKeys.sortChange: '24h change (high to low)',
     LocalizationKeys.appName: 'Crypto Tracker',
     LocalizationKeys.searchHint: 'Search coins',
     LocalizationKeys.favorites: 'Favorites',
@@ -226,6 +248,17 @@ const _localizedValues = <String, Map<String, String>>{
     LocalizationKeys.rankNumber: 'RANK #{rank}',
   },
   'my': {
+    LocalizationKeys.emptyFavorites: 'နှစ်သက်ရာများ မရှိသေးပါ',
+    LocalizationKeys.emptyFavoritesHint:
+        'စျေးကွက်မှ ဒင်္ဂါးများကို ကြယ်မှတ်၍ ဤနေရာတွင် သိမ်းပါ။',
+    LocalizationKeys.noFavoriteMatches: 'ကိုက်ညီသော နှစ်သက်ရာ မတွေ့ပါ',
+    LocalizationKeys.browseMarkets: 'စျေးကွက်များ ကြည့်မည်',
+    LocalizationKeys.searchFavorites: 'နှစ်သက်ရာများ ရှာဖွေပါ',
+    LocalizationKeys.sortFavorites: 'နှစ်သက်ရာများ စီမည်',
+    LocalizationKeys.sortName: 'အမည် (A–Z)',
+    LocalizationKeys.sortMarketCap: 'စျေးကွက်တန်ဖိုး (များမှ နည်းသို့)',
+    LocalizationKeys.sortPrice: 'စျေးနှုန်း (များမှ နည်းသို့)',
+    LocalizationKeys.sortChange: '၂၄နာရီ အပြောင်းအလဲ (များမှ နည်းသို့)',
     LocalizationKeys.appName: 'Crypto Tracker',
     LocalizationKeys.searchHint: 'ဒင်္ဂါးများ ရှာဖွေပါ',
     LocalizationKeys.favorites: 'နှစ်သက်ရာများ',

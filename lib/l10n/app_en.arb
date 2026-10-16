@@ -39,5 +39,15 @@
   "aboutCoin": "ABOUT {coin}",
   "sourceHost": "○  SOURCE  ·  {host}",
   "rankUnavailable": "RANK -",
-  "rankNumber": "RANK #{rank}"
+  "rankNumber": "RANK #{rank}",
+  "emptyFavorites": "No favorites yet",
+  "emptyFavoritesHint": "Star coins in Markets to keep them here.",
+  "noFavoriteMatches": "No matching favorites",
+  "browseMarkets": "Browse markets",
+  "searchFavorites": "Search favorites",
+  "sortFavorites": "Sort favorites",
+  "sortName": "Name (A–Z)",
+  "sortMarketCap": "Market cap (high to low)",
+  "sortPrice": "Price (high to low)",
+  "sortChange": "24h change (high to low)"
 }

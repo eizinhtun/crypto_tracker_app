@@ -7,11 +7,12 @@ import '../../domain/entities/coin_detail.dart';
 import '../../domain/entities/global_market.dart';
 import '../../domain/entities/trending_coin.dart';
 import '../../domain/repositories/crypto_repository.dart';
+import '../../domain/repositories/favorites_repository.dart';
 import '../datasources/crypto_local_datasource.dart';
 import '../datasources/crypto_remote_datasource.dart';
 import '../models/coin_model.dart';
 
-class CryptoRepositoryImpl implements CryptoRepository {
+class CryptoRepositoryImpl implements CryptoRepository, FavoritesRepository {
   const CryptoRepositoryImpl({
     required this.remoteDataSource,
     required this.localDataSource,
@@ -134,6 +135,48 @@ class CryptoRepositoryImpl implements CryptoRepository {
       trimmedQuery,
       const NetworkFailure(_noInternetMessage),
     );
+  }
+
+  @override
+  Future<Result<List<Coin>>> getFavorites() async {
+    try {
+      final ids = await localDataSource.getFavoriteIds();
+      if (ids.isEmpty) return const Result.success([]);
+      final cached =
+          await localDataSource.searchCachedCoins('', allowStale: true);
+      final byId = {
+        for (final coin in cached) coin.id: coin.toEntity(isFavorite: true)
+      };
+      final coins = <Coin>[];
+      for (final id in ids) {
+        final cachedCoin = byId[id];
+        if (cachedCoin != null) {
+          coins.add(cachedCoin);
+          continue;
+        }
+        // Search results and detail-only favorites may not exist in market pages.
+        final result = await getCoinDetail(id);
+        if (result case Success(value: final data)) {
+          final detail = data.data;
+          coins.add(Coin(
+            id: id,
+            name: detail.name,
+            symbol: detail.symbol,
+            image: detail.image,
+            currentPrice: detail.currentPrice,
+            marketCap: detail.marketCap,
+            priceChangePercentage24h: detail.priceChangePercentage24h,
+            isFavorite: true,
+          ));
+        } else {
+          // Keep unavailable favorites visible and removable, including offline.
+          coins.add(Coin(id: id, name: id, symbol: '', isFavorite: true));
+        }
+      }
+      return Result.success(coins, source: ResultSource.local);
+    } on Object {
+      return const Result.failure(CacheFailure(_cacheMessage));
+    }
   }
 
   @override

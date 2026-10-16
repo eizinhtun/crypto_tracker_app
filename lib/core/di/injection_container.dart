@@ -1,3 +1,6 @@
+import '../../features/crypto/domain/repositories/favorites_repository.dart';
+import '../../features/crypto/domain/usecases/get_favorites_usecase.dart';
+import '../../features/crypto/presentation/viewmodels/favorites/favorites_view_model.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
@@ -73,6 +76,11 @@ Future<void> configureDependencies() async {
         networkInfo: sl(),
       ),
     )
+    ..registerLazySingleton<FavoritesRepository>(
+      () => sl<CryptoRepository>() as FavoritesRepository,
+    )
+    ..registerLazySingleton(() => GetFavoritesUseCase(sl()))
+    ..registerFactory(() => FavoritesViewModel(sl(), sl()))
     ..registerLazySingleton(() => GetCoinsUseCase(sl()))
     ..registerLazySingleton(() => GetCoinDetailUseCase(sl()))
     ..registerLazySingleton(() => GetCryptoOverviewUseCase(sl()))

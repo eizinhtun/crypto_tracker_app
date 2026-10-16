@@ -39,5 +39,15 @@
   "aboutCoin": "{coin} အကြောင်း",
   "sourceHost": "○  ရင်းမြစ်  ·  {host}",
   "rankUnavailable": "အဆင့် -",
-  "rankNumber": "အဆင့် #{rank}"
+  "rankNumber": "အဆင့် #{rank}",
+  "emptyFavorites": "နှစ်သက်ရာများ မရှိသေးပါ",
+  "emptyFavoritesHint": "စျေးကွက်မှ ဒင်္ဂါးများကို ကြယ်မှတ်၍ ဤနေရာတွင် သိမ်းပါ။",
+  "noFavoriteMatches": "ကိုက်ညီသော နှစ်သက်ရာ မတွေ့ပါ",
+  "browseMarkets": "စျေးကွက်များ ကြည့်မည်",
+  "searchFavorites": "နှစ်သက်ရာများ ရှာဖွေပါ",
+  "sortFavorites": "နှစ်သက်ရာများ စီမည်",
+  "sortName": "အမည် (A–Z)",
+  "sortMarketCap": "စျေးကွက်တန်ဖိုး (များမှ နည်းသို့)",
+  "sortPrice": "စျေးနှုန်း (များမှ နည်းသို့)",
+  "sortChange": "၂၄နာရီ အပြောင်းအလဲ (များမှ နည်းသို့)"
 }

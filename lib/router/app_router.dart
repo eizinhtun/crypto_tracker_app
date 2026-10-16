@@ -1,3 +1,5 @@
+import '../features/crypto/presentation/pages/favorites_page.dart';
+import '../features/crypto/presentation/viewmodels/favorites/favorites_view_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -21,6 +23,14 @@ final appRouter = GoRouter(
           child: const CoinListPage(),
         );
       },
+    ),
+    GoRoute(
+      path: '/favorites',
+      name: AppRouteNames.favorites,
+      builder: (context, state) => BlocProvider(
+        create: (_) => sl<FavoritesViewModel>()..load(),
+        child: const FavoritesPage(),
+      ),
     ),
     GoRoute(
       path: '/coins/:id',
